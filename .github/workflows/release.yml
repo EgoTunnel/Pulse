@@ -1,0 +1,42 @@
+name: Release
+
+# Triggered by pushing a version tag (e.g. v0.1.1) — `npm run release` does
+# this for you. Builds an installer on each platform and publishes them all
+# to a single GitHub Release named after the tag.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - os: windows-latest
+            flag: --win
+          - os: macos-latest
+            flag: --mac
+          - os: ubuntu-latest
+            flag: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npx electron-builder ${{ matrix.flag }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
