@@ -321,6 +321,18 @@ export interface ServerToClientEvents {
   'presenter:error': (message: string) => void
 }
 
+// ---------------------------------------------------------------------------
+// Auto-update
+// ---------------------------------------------------------------------------
+
+export type UpdaterStatus =
+  | { state: 'idle' }
+  | { state: 'checking' }
+  | { state: 'available'; version: string }
+  | { state: 'downloading'; percent: number }
+  | { state: 'ready'; version: string }
+  | { state: 'error'; message: string }
+
 /** Events clients emit to the server. */
 export interface ClientToServerEvents {
   'student:join': (

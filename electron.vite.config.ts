@@ -29,6 +29,16 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/preload/index.ts')
+        },
+        output: {
+          // Electron's *sandboxed* preload loader (required for
+          // webPreferences.sandbox: true) runs the script through a custom,
+          // non-Node runner that only understands CommonJS — an ESM
+          // `import` there fails with "Cannot use import statement outside
+          // a module" regardless of file extension. Force CJS output here
+          // so sandboxing actually works.
+          format: 'cjs',
+          entryFileNames: '[name].cjs'
         }
       }
     }

@@ -8,6 +8,7 @@ export function Library(): JSX.Element {
   const openFromDisk = useEditorStore((s) => s.openFromDisk)
   const openFromLibrary = useEditorStore((s) => s.openFromLibrary)
   const removeFromLibrary = useEditorStore((s) => s.removeFromLibrary)
+  const openError = useEditorStore((s) => s.openError)
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
 
@@ -42,6 +43,12 @@ export function Library(): JSX.Element {
           </button>
         </div>
       </header>
+
+      {openError && (
+        <p role="alert" className="mb-6 rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+          {openError}
+        </p>
+      )}
 
       {creating && (
         <form

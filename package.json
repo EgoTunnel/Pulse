@@ -19,6 +19,7 @@
     "release": "node scripts/release.mjs"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "express": "^4.21.2",
     "nanoid": "^5.0.9",
     "qrcode": "^1.5.4",
@@ -61,13 +62,15 @@
       "provider": "github",
       "owner": "EgoTunnel",
       "repo": "Pulse",
-      "draft": false
+      "releaseType": "release"
     },
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -78,11 +81,15 @@
       "createStartMenuShortcut": true
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.education"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Education"
     }
   }

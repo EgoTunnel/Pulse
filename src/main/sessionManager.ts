@@ -11,6 +11,10 @@ import type {
   Slide
 } from '@shared/types'
 import { toPublicSlide } from '@shared/types'
+import { validateResponseValue } from './validate'
+
+/** Hard ceiling on Q&A submissions kept per slide, regardless of maxWordsPerStudent-style client hints. */
+const MAX_QNA_ENTRIES_PER_SLIDE = 500
 
 interface StoredResponse {
   socketId: string
@@ -134,14 +138,24 @@ export class SessionManager {
     this.qnaEntries.clear()
   }
 
-  recordResponse(socketId: string, slideId: string, value: ResponseValue): { ok: true } | { ok: false; error: string } {
+  /** `rawValue` is untrusted network input — never assume it matches the ResponseValue shape until validateResponseValue says so. */
+  recordResponse(socketId: string, slideId: unknown, rawValue: unknown): { ok: true } | { ok: false; error: string } {
     if (this.status !== 'live') return { ok: false, error: 'This session has ended.' }
-    if (slideId !== this.currentSlideId) return { ok: false, error: 'That question is no longer active.' }
+    if (typeof slideId !== 'string' || slideId !== this.currentSlideId) {
+      return { ok: false, error: 'That question is no longer active.' }
+    }
     if (!this.responsesOpen) return { ok: false, error: 'Responses are closed for this question.' }
+
+    const slide = this.currentSlide()
+    if (!slide) return { ok: false, error: 'That question is no longer active.' }
+
+    const value = validateResponseValue(slide, rawValue)
+    if (!value) return { ok: false, error: 'That response is not valid for this question.' }
 
     if (value.kind === 'question') {
       const list = this.qnaEntries.get(slideId) ?? []
-      list.push({ id: randomUUID(), text: value.text.trim().slice(0, 500), createdAt: new Date().toISOString(), addressed: false })
+      if (list.length >= MAX_QNA_ENTRIES_PER_SLIDE) return { ok: false, error: 'This question queue is full.' }
+      list.push({ id: randomUUID(), text: value.text, createdAt: new Date().toISOString(), addressed: false })
       this.qnaEntries.set(slideId, list)
       return { ok: true }
     }

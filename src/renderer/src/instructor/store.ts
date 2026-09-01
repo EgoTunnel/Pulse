@@ -12,6 +12,7 @@ interface EditorState {
   dirty: boolean
   saving: boolean
   selectedSlideId: string | null
+  openError: string | null
 
   refreshLibrary: () => Promise<void>
   createPresentation: (title: string) => Promise<void>
@@ -43,6 +44,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   dirty: false,
   saving: false,
   selectedSlideId: null,
+  openError: null,
 
   refreshLibrary: async () => {
     const library = await window.pulse.library.list()
@@ -55,20 +57,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   openFromDisk: async () => {
-    const result = await window.pulse.presentation.open()
-    if (!result) return
-    set({
-      presentation: result.presentation,
-      filePath: result.filePath,
-      dirty: false,
-      view: 'editor',
-      selectedSlideId: result.presentation.slides[0]?.id ?? null
-    })
+    set({ openError: null })
+    try {
+      const result = await window.pulse.presentation.open()
+      if (!result) return
+      set({
+        presentation: result.presentation,
+        filePath: result.filePath,
+        dirty: false,
+        view: 'editor',
+        selectedSlideId: result.presentation.slides[0]?.id ?? null
+      })
+    } catch (err) {
+      set({ openError: err instanceof Error ? err.message : "Couldn't open that file." })
+    }
   },
 
   openFromLibrary: async (id: string) => {
+    set({ openError: null })
     const result = await window.pulse.presentation.openById(id)
-    if (!result) return
+    if (!result) {
+      set({ openError: "Couldn't open that presentation — the file may be missing or damaged." })
+      return
+    }
     set({
       presentation: result.presentation,
       filePath: result.filePath,

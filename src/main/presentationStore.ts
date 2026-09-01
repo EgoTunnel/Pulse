@@ -1,14 +1,54 @@
 import { app, dialog } from 'electron'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import type { LibraryEntry, Presentation } from '@shared/types'
+import type { LibraryEntry, Presentation, Slide } from '@shared/types'
+import { CONTENT_SLIDE_TYPES, INTERACTIVE_SLIDE_TYPES } from '@shared/types'
 import { makeId } from '@shared/id'
 
 const FILE_EXTENSION = 'pulse.json'
+const KNOWN_SLIDE_TYPES = new Set<string>([...CONTENT_SLIDE_TYPES, ...INTERACTIVE_SLIDE_TYPES])
 
 function sanitizeFileName(title: string): string {
   const trimmed = title.trim() || 'Untitled presentation'
   return trimmed.replace(/[\\/:*?"<>|]/g, '-').slice(0, 80)
+}
+
+function isDataImageUrl(v: unknown): v is string {
+  return typeof v === 'string' && /^data:image\/[a-z0-9.+-]+;base64,/i.test(v)
+}
+
+/**
+ * Presentation files are meant to be shared instructor-to-instructor
+ * ("share it with another instructor" per the portability requirement), so
+ * they're untrusted input, not just this app's own output read back. A
+ * hand-edited or malicious file shouldn't be able to crash the app when
+ * opened, and an `imageDataUrl` that isn't an embedded data: URI is stripped
+ * — otherwise opening someone else's file would silently make the renderer
+ * fetch whatever URL they put there, leaking that the file was opened.
+ */
+function sanitizeSlide(raw: unknown): Slide | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const s = raw as Record<string, unknown>
+  if (typeof s.id !== 'string' || typeof s.type !== 'string' || !KNOWN_SLIDE_TYPES.has(s.type)) return null
+  const clone = { ...s }
+  if ('imageDataUrl' in clone && !isDataImageUrl(clone.imageDataUrl)) delete clone.imageDataUrl
+  return clone as unknown as Slide
+}
+
+function sanitizePresentation(raw: unknown): Presentation {
+  if (typeof raw !== 'object' || raw === null) throw new Error("This doesn't look like a Pulse presentation file.")
+  const p = raw as Record<string, unknown>
+  if (typeof p.id !== 'string' || typeof p.title !== 'string' || !Array.isArray(p.slides)) {
+    throw new Error("This doesn't look like a Pulse presentation file.")
+  }
+  const slides = p.slides.map(sanitizeSlide).filter((s): s is Slide => s !== null)
+  return {
+    id: p.id,
+    title: p.title,
+    createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString(),
+    updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString(),
+    slides
+  }
 }
 
 /**
@@ -158,7 +198,13 @@ export class PresentationStore {
 
   async openPath(filePath: string): Promise<{ presentation: Presentation; filePath: string }> {
     const raw = await fs.readFile(filePath, 'utf-8')
-    const presentation = JSON.parse(raw) as Presentation
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      throw new Error("This doesn't look like a Pulse presentation file.")
+    }
+    const presentation = sanitizePresentation(parsed)
     await this.upsertLibraryEntry({
       id: presentation.id,
       title: presentation.title,
