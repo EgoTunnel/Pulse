@@ -6,11 +6,13 @@ interface Props {
   data: ResultsData
   responseCount: number
   revealed: boolean
+  onDismissQuestion?: (questionId: string) => void
+  onMarkQuestionAddressed?: (questionId: string, addressed: boolean) => void
 }
 
 const BAR_COLORS = ['bg-pulse-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500', 'bg-cyan-500']
 
-export function ResultsView({ slide, data, responseCount, revealed }: Props): JSX.Element {
+export function ResultsView({ slide, data, responseCount, revealed, onDismissQuestion, onMarkQuestionAddressed }: Props): JSX.Element {
   if (!revealed) {
     return (
       <div className="flex flex-col items-center gap-2 text-slate-300">
@@ -90,8 +92,35 @@ export function ResultsView({ slide, data, responseCount, revealed }: Props): JS
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
           {data.entries.length === 0 && <p className="text-slate-400">No questions yet.</p>}
           {[...data.entries].reverse().map((q) => (
-            <div key={q.id} className="rounded-xl bg-white/10 p-4 text-left text-white">
-              {q.text}
+            <div
+              key={q.id}
+              className={`flex items-start gap-3 rounded-xl p-4 text-left ${q.addressed ? 'bg-white/5 text-slate-400' : 'bg-white/10 text-white'}`}
+            >
+              <p className={`flex-1 ${q.addressed ? 'line-through decoration-slate-500' : ''}`}>{q.text}</p>
+              {(onMarkQuestionAddressed || onDismissQuestion) && (
+                <div className="flex shrink-0 gap-1">
+                  {onMarkQuestionAddressed && (
+                    <button
+                      onClick={() => onMarkQuestionAddressed(q.id, !q.addressed)}
+                      aria-pressed={q.addressed}
+                      className={`rounded-md px-2 py-1 text-xs font-medium ${
+                        q.addressed ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/10 text-slate-200 hover:bg-white/20'
+                      }`}
+                    >
+                      {q.addressed ? '✓ Addressed' : 'Mark addressed'}
+                    </button>
+                  )}
+                  {onDismissQuestion && (
+                    <button
+                      onClick={() => onDismissQuestion(q.id)}
+                      aria-label="Dismiss question"
+                      className="rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200 hover:bg-red-500/30 hover:text-red-200"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -154,20 +183,31 @@ function WordCloud({ words }: { words: { text: string; count: number }[] }): JSX
   if (words.length === 0) return <p className="text-slate-400">No words yet.</p>
   const max = Math.max(...words.map((w) => w.count))
   return (
-    <div className="flex max-w-4xl flex-wrap items-center justify-center gap-x-4 gap-y-2">
-      {words.map((w) => {
-        const scale = 1 + (w.count / max) * 2.2
-        return (
-          <span
-            key={w.text}
-            className="font-semibold text-white"
-            style={{ fontSize: `${scale}rem`, opacity: 0.55 + (w.count / max) * 0.45 }}
-          >
-            {w.text}
-          </span>
-        )
-      })}
-    </div>
+    <>
+      {/* Word size is the only visual signal here, which doesn't reach screen readers —
+          give them the same ranking as an ordered, readable list instead. */}
+      <ol className="sr-only">
+        {words.map((w) => (
+          <li key={w.text}>
+            {w.text}: {w.count} {w.count === 1 ? 'response' : 'responses'}
+          </li>
+        ))}
+      </ol>
+      <div className="flex max-w-4xl flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-hidden="true">
+        {words.map((w) => {
+          const scale = 1 + (w.count / max) * 2.2
+          return (
+            <span
+              key={w.text}
+              className="font-semibold text-white"
+              style={{ fontSize: `${scale}rem`, opacity: 0.55 + (w.count / max) * 0.45 }}
+            >
+              {w.text}
+            </span>
+          )
+        })}
+      </div>
+    </>
   )
 }
 

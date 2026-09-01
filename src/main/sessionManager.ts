@@ -110,6 +110,23 @@ export class SessionManager {
     this.qnaEntries.delete(this.currentSlideId)
   }
 
+  dismissQuestion(questionId: string): void {
+    if (!this.currentSlideId) return
+    const list = this.qnaEntries.get(this.currentSlideId)
+    if (!list) return
+    this.qnaEntries.set(this.currentSlideId, list.filter((q) => q.id !== questionId))
+  }
+
+  markQuestionAddressed(questionId: string, addressed: boolean): void {
+    if (!this.currentSlideId) return
+    const list = this.qnaEntries.get(this.currentSlideId)
+    if (!list) return
+    this.qnaEntries.set(
+      this.currentSlideId,
+      list.map((q) => (q.id === questionId ? { ...q, addressed } : q))
+    )
+  }
+
   end(): void {
     this.status = 'ended'
     this.participants.clear()

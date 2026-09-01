@@ -40,6 +40,12 @@ npm run build:linux  # build + package a Linux package
 
 ## Status
 
-This is an early scaffold covering the MVP described in the vision document's "MVP Definition": creating presentations with basic content slides plus multiple-choice, word-cloud, and rating/scale questions; saving and reopening presentations; starting a session with a QR/room-code join flow; anonymous real-time responses; and ending a session with participation data discarded. The remaining interactive question types (multiple select, true/false, Likert, short/open answer, ranking, numeric, Q&A, poll) are also implemented in the data model, editor, present mode, and student app, though some (like Q&A moderation controls) are intentionally minimal for now.
+This covers the MVP described in the vision document's "MVP Definition" and beyond: creating presentations with basic content slides plus all 12 interactive question types (multiple choice, multiple select, true/false, rating, Likert, word cloud, short/open answer, ranking, numeric, Q&A, poll); saving and reopening presentations; starting a session with a QR/room-code join flow; anonymous real-time responses; and ending a session with participation data discarded.
 
-Not yet built: auto-update, installer icons/branding, accessibility pass, and packaging polish.
+Also done:
+
+- **Q&A moderation** — the instructor can mark a submitted question addressed or dismiss it entirely; both propagate live to the presenter view.
+- **Accessibility pass** — keyboard-operable slide list and menus (no mouse-only drag/click paths), visible focus rings, `aria-live` regions for live counts and confirmations, labeled form controls throughout both apps, `aria-pressed`/`aria-expanded` on toggles, a screen-reader-readable list alongside the word cloud (which otherwise only encodes data as font size), image alt text (with a dedicated alt-text field for instructors to fill in), a properly modal end-session dialog, and `prefers-reduced-motion` support.
+- **Installer** — `npm run build:win` produces a working NSIS installer (`release/Pulse Setup <version>.exe`) with a custom icon (`build/icon.png`, auto-converted per platform by electron-builder); `build:mac`/`build:linux` use the same config but need to run on their respective OSes.
+
+Not yet built: auto-update and a full manual accessibility audit (screen-reader testing wasn't possible in this environment — the pass above is markup-level, not verified with an actual reader).

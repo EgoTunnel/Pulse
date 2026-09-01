@@ -128,6 +128,12 @@ export class LocalServer {
       socket.on('presenter:revealResults', () => this.withPresenterSession(role, (s) => s.revealResults()))
       socket.on('presenter:hideResults', () => this.withPresenterSession(role, (s) => s.hideResults()))
       socket.on('presenter:resetResponses', () => this.withPresenterSession(role, (s) => s.resetResponses(), true))
+      socket.on('presenter:dismissQuestion', ({ questionId }) =>
+        this.withPresenterSession(role, (s) => s.dismissQuestion(questionId), true)
+      )
+      socket.on('presenter:markQuestionAddressed', ({ questionId, addressed }) =>
+        this.withPresenterSession(role, (s) => s.markQuestionAddressed(questionId, addressed), true)
+      )
       socket.on('presenter:endSession', () => {
         if (!this.session || role !== 'presenter') return
         this.io.to(roomKey(this.session.roomCode)).emit('session:ended')

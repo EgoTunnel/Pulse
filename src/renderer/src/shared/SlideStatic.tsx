@@ -44,7 +44,11 @@ export function SlideStatic({ slide, size }: Props): JSX.Element {
       return (
         <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-4">
           {slide.imageDataUrl ? (
-            <img src={slide.imageDataUrl} className="max-h-[80%] max-w-full rounded-lg object-contain" />
+            <img
+              src={slide.imageDataUrl}
+              alt={slide.altText || slide.caption || ''}
+              className="max-h-[80%] max-w-full rounded-lg object-contain"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-slate-700 text-slate-500">
               No image
@@ -58,7 +62,7 @@ export function SlideStatic({ slide, size }: Props): JSX.Element {
         <div className={`flex h-full w-full items-center gap-6 ${big ? 'px-16' : 'px-4'} ${slide.imagePosition === 'left' ? '' : 'flex-row-reverse'}`}>
           <div className="flex h-full flex-1 items-center justify-center">
             {slide.imageDataUrl ? (
-              <img src={slide.imageDataUrl} className="max-h-[70%] max-w-full rounded-lg object-contain" />
+              <img src={slide.imageDataUrl} alt={slide.altText || ''} className="max-h-[70%] max-w-full rounded-lg object-contain" />
             ) : (
               <div className="flex h-2/3 w-full items-center justify-center rounded-lg border border-dashed border-slate-700 text-slate-500">
                 No image

@@ -14,9 +14,9 @@ export function createSlide(type: SlideType): Slide {
     case 'text':
       return { id, type, heading: 'Heading', body: '' }
     case 'image':
-      return { id, type, caption: '' }
+      return { id, type, caption: '', altText: '' }
     case 'imageText':
-      return { id, type, heading: 'Heading', body: '', imagePosition: 'right' }
+      return { id, type, heading: 'Heading', body: '', imagePosition: 'right', altText: '' }
     case 'section':
       return { id, type, title: 'New section' }
     case 'blank':

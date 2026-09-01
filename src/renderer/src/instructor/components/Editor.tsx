@@ -30,12 +30,18 @@ export function Editor(): JSX.Element | null {
           <button onClick={backToLibrary} className="rounded-lg px-2 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
             ← Library
           </button>
+          <label htmlFor="presentation-title" className="sr-only">
+            Presentation title
+          </label>
           <input
+            id="presentation-title"
             value={presentation.title}
             onChange={(e) => setTitle(e.target.value)}
             className="rounded-lg bg-transparent px-2 py-1 text-sm font-medium text-white outline-none focus:bg-slate-800"
           />
-          <span className="text-xs text-slate-500">{saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}</span>
+          <span className="text-xs text-slate-500" role="status" aria-live="polite">
+            {saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}
+          </span>
         </div>
         <button
           onClick={enterPresent}
@@ -47,11 +53,11 @@ export function Editor(): JSX.Element | null {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-56 shrink-0 border-r border-slate-800">
+        <div className="w-56 shrink-0 border-r border-slate-800" aria-label="Slides" role="region">
           <SlideList />
         </div>
 
-        <div className="flex flex-1 items-center justify-center overflow-auto bg-slate-950 p-8">
+        <div className="flex flex-1 items-center justify-center overflow-auto bg-slate-950 p-8" aria-label="Slide preview" role="region">
           {selectedSlide && (
             <div className="w-full max-w-4xl">
               <SlideThumbnail slide={selectedSlide} size="present" />
@@ -59,7 +65,7 @@ export function Editor(): JSX.Element | null {
           )}
         </div>
 
-        <div className="w-80 shrink-0 overflow-y-auto border-l border-slate-800 p-4">
+        <div className="w-80 shrink-0 overflow-y-auto border-l border-slate-800 p-4" aria-label="Slide settings" role="region">
           {selectedSlide ? (
             <SlideInspector slide={selectedSlide} />
           ) : (

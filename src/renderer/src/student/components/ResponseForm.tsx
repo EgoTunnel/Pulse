@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import type { ResponseValue, Slide } from '@shared/types'
 import { LIKERT_LEVELS } from '@shared/types'
 
@@ -15,14 +15,25 @@ const selectedButton = 'border-pulse-500 bg-pulse-500 text-white'
 
 function Shell({ children, submitted }: { children: React.ReactNode; submitted: boolean }): JSX.Element {
   return (
-    <div className="relative">
+    <div className="relative" role="group" aria-labelledby="question-heading">
       {children}
-      {submitted && (
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-3 text-sm font-medium text-emerald-700">
-          ✓ Response received
-        </div>
-      )}
+      <div role="status" aria-live="polite">
+        {submitted && (
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-3 text-sm font-medium text-emerald-700">
+            ✓ Response received
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+function ErrorMessage({ error }: { error: string | null }): JSX.Element | null {
+  if (!error) return null
+  return (
+    <p role="alert" className="mt-3 text-sm text-red-600">
+      {error}
+    </p>
   )
 }
 
@@ -50,6 +61,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               <button
                 key={opt.id}
                 disabled={disabled}
+                aria-pressed={selected === opt.id}
                 onClick={() => {
                   setSelected(opt.id)
                   send({ kind: 'choice', optionId: opt.id })
@@ -60,7 +72,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               </button>
             ))}
           </div>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -75,6 +87,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
                 <button
                   key={opt.id}
                   disabled={disabled}
+                  aria-pressed={isSelected}
                   onClick={() => setSelected((prev) => (isSelected ? prev.filter((id) => id !== opt.id) : [...prev, opt.id]))}
                   className={`${bigButton} ${isSelected ? selectedButton : idleButton}`}
                 >
@@ -90,7 +103,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Submit
           </button>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -103,6 +116,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               <button
                 key={String(v)}
                 disabled={disabled}
+                aria-pressed={selected === v}
                 onClick={() => {
                   setSelected(v)
                   send({ kind: 'boolean', value: v })
@@ -113,7 +127,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               </button>
             ))}
           </div>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -122,7 +136,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       const options = Array.from({ length: slide.max - slide.min + 1 }, (_, i) => slide.min + i)
       return (
         <Shell submitted={submitted}>
-          <div className="mb-2 flex justify-between text-xs text-slate-500">
+          <div className="mb-2 flex justify-between text-xs text-slate-500" aria-hidden="true">
             <span>{slide.minLabel}</span>
             <span>{slide.maxLabel}</span>
           </div>
@@ -131,6 +145,8 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               <button
                 key={n}
                 disabled={disabled}
+                aria-pressed={value === n}
+                aria-label={n === slide.min && slide.minLabel ? `${n} — ${slide.minLabel}` : n === slide.max && slide.maxLabel ? `${n} — ${slide.maxLabel}` : String(n)}
                 onClick={() => {
                   setValue(n)
                   send({ kind: 'rating', value: n })
@@ -141,7 +157,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               </button>
             ))}
           </div>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -154,6 +170,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               <button
                 key={label}
                 disabled={disabled}
+                aria-pressed={value === i}
                 onClick={() => {
                   setValue(i)
                   send({ kind: 'likert', value: i as 0 | 1 | 2 | 3 | 4 })
@@ -164,7 +181,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               </button>
             ))}
           </div>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -174,18 +191,23 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
         <Shell submitted={submitted}>
           <div className="space-y-3">
             {words.map((w, i) => (
-              <input
-                key={i}
-                disabled={disabled}
-                value={w}
-                onChange={(e) => {
-                  const next = [...words]
-                  next[i] = e.target.value
-                  setWords(next)
-                }}
-                placeholder={`Word ${i + 1}`}
-                className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-lg outline-none focus:border-pulse-500"
-              />
+              <div key={i}>
+                <label htmlFor={`word-${i}`} className="sr-only">
+                  Word {i + 1}
+                </label>
+                <input
+                  id={`word-${i}`}
+                  disabled={disabled}
+                  value={w}
+                  onChange={(e) => {
+                    const next = [...words]
+                    next[i] = e.target.value
+                    setWords(next)
+                  }}
+                  placeholder={`Word ${i + 1}`}
+                  className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-lg outline-none focus:border-pulse-500"
+                />
+              </div>
             ))}
           </div>
           <button
@@ -195,7 +217,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Submit
           </button>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -205,7 +227,11 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       const long = slide.type === 'openResponse'
       return (
         <Shell submitted={submitted}>
+          <label htmlFor="answer-text" className="sr-only">
+            Your answer
+          </label>
           <textarea
+            id="answer-text"
             disabled={disabled}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -221,7 +247,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Submit
           </button>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -236,23 +262,35 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       }
       return (
         <Shell submitted={submitted}>
-          <div className="space-y-2">
+          <ol className="space-y-2">
             {order.map((id, i) => {
               const opt = slide.options.find((o) => o.id === id)!
               return (
-                <div key={id} className="flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3">
-                  <span className="w-5 text-sm font-semibold text-slate-400">{i + 1}</span>
+                <li key={id} className="flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3">
+                  <span className="w-5 text-sm font-semibold text-slate-400" aria-hidden="true">
+                    {i + 1}
+                  </span>
                   <span className="flex-1 text-base font-medium text-slate-800">{opt.label}</span>
-                  <button disabled={disabled} onClick={() => move(i, -1)} className="rounded-lg px-2 py-1 text-slate-500 disabled:opacity-30">
+                  <button
+                    disabled={disabled || i === 0}
+                    onClick={() => move(i, -1)}
+                    aria-label={`Move ${opt.label} up`}
+                    className="rounded-lg px-2 py-1 text-slate-500 disabled:opacity-30"
+                  >
                     ↑
                   </button>
-                  <button disabled={disabled} onClick={() => move(i, 1)} className="rounded-lg px-2 py-1 text-slate-500 disabled:opacity-30">
+                  <button
+                    disabled={disabled || i === order.length - 1}
+                    onClick={() => move(i, 1)}
+                    aria-label={`Move ${opt.label} down`}
+                    className="rounded-lg px-2 py-1 text-slate-500 disabled:opacity-30"
+                  >
                     ↓
                   </button>
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ol>
           <button
             disabled={disabled}
             onClick={() => send({ kind: 'ranking', optionIds: order })}
@@ -260,7 +298,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Submit ranking
           </button>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -269,7 +307,11 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       return (
         <Shell submitted={submitted}>
           <div className="flex items-center gap-2">
+            <label htmlFor="numeric-answer" className="sr-only">
+              Your answer{slide.unit ? ` (${slide.unit})` : ''}
+            </label>
             <input
+              id="numeric-answer"
               disabled={disabled}
               type="number"
               value={value}
@@ -277,7 +319,11 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
               placeholder="0"
               className="w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-2xl font-semibold outline-none focus:border-pulse-500"
             />
-            {slide.unit && <span className="text-lg text-slate-500">{slide.unit}</span>}
+            {slide.unit && (
+              <span className="text-lg text-slate-500" aria-hidden="true">
+                {slide.unit}
+              </span>
+            )}
           </div>
           <button
             disabled={disabled || value.trim() === ''}
@@ -286,7 +332,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Submit
           </button>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <ErrorMessage error={error} />
         </Shell>
       )
     }
@@ -294,7 +340,11 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       const [text, setText] = useState('')
       return (
         <Shell submitted={false}>
+          <label htmlFor="qna-text" className="sr-only">
+            Your question
+          </label>
           <textarea
+            id="qna-text"
             disabled={disabled}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -313,10 +363,12 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
           >
             Send question
           </button>
-          {submitted && (
-            <p className="mt-3 text-center text-sm font-medium text-emerald-700">Sent! You can ask another question.</p>
-          )}
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <div role="status" aria-live="polite">
+            {submitted && (
+              <p className="mt-3 text-center text-sm font-medium text-emerald-700">Sent! You can ask another question.</p>
+            )}
+          </div>
+          <ErrorMessage error={error} />
         </Shell>
       )
     }

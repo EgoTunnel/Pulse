@@ -53,7 +53,11 @@ export function Library(): JSX.Element {
             setNewTitle('')
           }}
         >
+          <label htmlFor="new-presentation-title" className="sr-only">
+            Presentation title
+          </label>
           <input
+            id="new-presentation-title"
             autoFocus
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -79,27 +83,29 @@ export function Library(): JSX.Element {
           <p className="mt-1 text-sm text-slate-500">Create your first presentation to get started.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {library.map((entry) => (
-            <button
+            <li
               key={entry.id}
-              onClick={() => openFromLibrary(entry.id)}
-              className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800 to-slate-900 p-4 text-left transition hover:border-pulse-500"
+              className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800 to-slate-900 p-4 transition hover:border-pulse-500"
             >
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removeFromLibrary(entry.id)
-                }}
-                className="absolute right-2 top-2 hidden rounded-md bg-slate-950/70 px-2 py-1 text-xs text-slate-300 hover:text-red-400 group-hover:block"
+              <button
+                onClick={() => openFromLibrary(entry.id)}
+                aria-label={`Open ${entry.title}`}
+                className="absolute inset-0 z-0 text-left"
+              />
+              <button
+                onClick={() => removeFromLibrary(entry.id)}
+                aria-label={`Remove ${entry.title} from library`}
+                className="absolute right-2 top-2 z-10 hidden rounded-md bg-slate-950/70 px-2 py-1 text-xs text-slate-300 hover:text-red-400 group-hover:block group-focus-within:block"
               >
                 Remove
-              </span>
-              <p className="truncate font-medium text-white">{entry.title}</p>
-              <p className="mt-1 text-xs text-slate-400">{new Date(entry.updatedAt).toLocaleDateString()}</p>
-            </button>
+              </button>
+              <p className="pointer-events-none truncate font-medium text-white">{entry.title}</p>
+              <p className="pointer-events-none mt-1 text-xs text-slate-400">{new Date(entry.updatedAt).toLocaleDateString()}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )

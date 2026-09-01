@@ -6,6 +6,7 @@ interface Props {
   state: SessionStateMessage | null
   index: number
   total: number
+  showJoinPanel: boolean
   onPrev: () => void
   onNext: () => void
   onToggleOpen: () => void
@@ -21,6 +22,7 @@ export function ControlBar({
   state,
   index,
   total,
+  showJoinPanel,
   onPrev,
   onNext,
   onToggleOpen,
@@ -33,12 +35,17 @@ export function ControlBar({
   const interactive = isInteractiveSlide(slide)
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-slate-800 bg-slate-950/95 px-6 py-3 backdrop-blur">
+    <nav aria-label="Presentation controls" className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-slate-800 bg-slate-950/95 px-6 py-3 backdrop-blur">
       <div className="flex items-center gap-2">
         <button onClick={onExit} className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
-          ✕ Exit
+          <span aria-hidden="true">✕</span> Exit presentation
         </button>
-        <button onClick={onToggleJoinPanel} className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
+        <button
+          onClick={onToggleJoinPanel}
+          aria-expanded={showJoinPanel}
+          aria-label={`${showJoinPanel ? 'Hide' : 'Show'} join info. Room code ${state?.roomCode ?? 'not ready'}, ${state?.participantCount ?? 0} students connected`}
+          className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
+        >
           {state?.roomCode ?? '···'} · {state?.participantCount ?? 0} connected
         </button>
       </div>
@@ -47,28 +54,33 @@ export function ControlBar({
         <button
           onClick={onPrev}
           disabled={index === 0}
+          aria-label="Previous slide"
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 disabled:opacity-30"
         >
-          ← Prev
+          <span aria-hidden="true">←</span> Prev
         </button>
-        <span className="text-sm text-slate-500">
-          {index + 1} / {total}
+        <span className="text-sm text-slate-500" aria-live="polite">
+          Slide {index + 1} of {total}
         </span>
         <button
           onClick={onNext}
           disabled={index === total - 1}
+          aria-label="Next slide"
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 disabled:opacity-30"
         >
-          Next →
+          Next <span aria-hidden="true">→</span>
         </button>
       </div>
 
       <div className="flex items-center gap-2">
         {interactive && (
           <>
-            <span className="text-sm text-slate-400">{state?.responseCount ?? 0} responses</span>
+            <span className="text-sm text-slate-400" aria-live="polite">
+              {state?.responseCount ?? 0} responses
+            </span>
             <button
               onClick={onToggleOpen}
+              aria-pressed={state?.responsesOpen ?? false}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
                 state?.responsesOpen ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-300'
               }`}
@@ -77,6 +89,7 @@ export function ControlBar({
             </button>
             <button
               onClick={onToggleReveal}
+              aria-pressed={state?.resultsRevealed ?? false}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
                 state?.resultsRevealed ? 'bg-pulse-500/20 text-pulse-300' : 'bg-slate-800 text-slate-300'
               }`}
@@ -84,7 +97,7 @@ export function ControlBar({
               {state?.resultsRevealed ? 'Results shown' : 'Reveal results'}
             </button>
             <button onClick={onReset} className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
-              Reset
+              Reset responses
             </button>
           </>
         )}
@@ -92,6 +105,6 @@ export function ControlBar({
           End session
         </button>
       </div>
-    </div>
+    </nav>
   )
 }

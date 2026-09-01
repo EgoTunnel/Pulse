@@ -41,12 +41,14 @@ export function App(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-5 py-8">
+    <main className="min-h-screen bg-slate-50 px-5 py-8">
       <div className="mx-auto max-w-md">
-        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-pulse-600">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-pulse-600" aria-live="polite">
           {session.state?.participantCount ?? 0} students · Room {session.state?.roomCode}
         </p>
-        <h1 className="mb-6 text-center text-2xl font-bold text-slate-900">{questionTextOf(slide)}</h1>
+        <h1 id="question-heading" className="mb-6 text-center text-2xl font-bold text-slate-900">
+          {questionTextOf(slide)}
+        </h1>
         <ResponseForm
           key={slide.id}
           slide={slide}
@@ -54,7 +56,7 @@ export function App(): JSX.Element {
           onSubmit={(value) => session.respond(slide.id, value)}
         />
       </div>
-    </div>
+    </main>
   )
 }
 

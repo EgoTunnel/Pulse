@@ -76,6 +76,8 @@ export interface ImageSlide extends SlideBase {
   type: 'image'
   imageDataUrl?: string
   caption?: string
+  /** Describes the image for screen reader users; falls back to the caption if left blank. */
+  altText?: string
 }
 
 export interface ImageTextSlide extends SlideBase {
@@ -84,6 +86,8 @@ export interface ImageTextSlide extends SlideBase {
   body: string
   imageDataUrl?: string
   imagePosition: 'left' | 'right'
+  /** Describes the image for screen reader users. */
+  altText?: string
 }
 
 export interface SectionSlide extends SlideBase {
@@ -337,5 +341,7 @@ export interface ClientToServerEvents {
   'presenter:revealResults': () => void
   'presenter:hideResults': () => void
   'presenter:resetResponses': () => void
+  'presenter:dismissQuestion': (payload: { questionId: string }) => void
+  'presenter:markQuestionAddressed': (payload: { questionId: string; addressed: boolean }) => void
   'presenter:endSession': () => void
 }

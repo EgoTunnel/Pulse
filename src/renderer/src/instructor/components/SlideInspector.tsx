@@ -47,7 +47,11 @@ function OptionsEditor({
     <div className="space-y-2">
       {options.map((opt, i) => (
         <div key={opt.id} className="flex items-center gap-2">
+          <label htmlFor={`option-${opt.id}`} className="sr-only">
+            Option {i + 1}
+          </label>
           <input
+            id={`option-${opt.id}`}
             value={opt.label}
             onChange={(e) => {
               const next = [...options]
@@ -59,6 +63,7 @@ function OptionsEditor({
           {options.length > 2 && (
             <button
               onClick={() => onChange(options.filter((o) => o.id !== opt.id))}
+              aria-label={`Remove option ${i + 1}${opt.label ? `: ${opt.label}` : ''}`}
               className="rounded-md px-2 py-1 text-xs text-slate-500 hover:text-red-400"
             >
               ✕
@@ -84,6 +89,7 @@ function RevealPolicyToggle({ value, onChange }: { value: RevealPolicy; onChange
           <button
             key={policy}
             onClick={() => onChange(policy)}
+            aria-pressed={value === policy}
             className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium ${
               value === policy ? 'border-pulse-400 bg-pulse-500/20 text-white' : 'border-slate-700 text-slate-400 hover:text-slate-200'
             }`}
@@ -149,6 +155,14 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
           <Field label="Caption">
             <input value={slide.caption ?? ''} onChange={(e) => patch({ caption: e.target.value })} className={inputClass} />
           </Field>
+          <Field label="Alt text (for screen readers)">
+            <input
+              value={slide.altText ?? ''}
+              onChange={(e) => patch({ altText: e.target.value })}
+              className={inputClass}
+              placeholder="Describe what's in the image"
+            />
+          </Field>
         </>
       )
     case 'imageText':
@@ -157,12 +171,21 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
           <Field label="Image">
             <ImagePicker value={slide.imageDataUrl} onChange={(d) => patch({ imageDataUrl: d })} />
           </Field>
+          <Field label="Alt text (for screen readers)">
+            <input
+              value={slide.altText ?? ''}
+              onChange={(e) => patch({ altText: e.target.value })}
+              className={inputClass}
+              placeholder="Describe what's in the image"
+            />
+          </Field>
           <Field label="Image position">
             <div className="flex gap-2">
               {(['left', 'right'] as const).map((pos) => (
                 <button
                   key={pos}
                   onClick={() => patch({ imagePosition: pos })}
+                  aria-pressed={slide.imagePosition === pos}
                   className={`flex-1 rounded-lg border px-3 py-2 text-xs capitalize ${
                     slide.imagePosition === pos ? 'border-pulse-400 bg-pulse-500/20 text-white' : 'border-slate-700 text-slate-400'
                   }`}
@@ -251,6 +274,7 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
                 <button
                   key={opt.label}
                   onClick={() => patch({ correctAnswer: opt.value })}
+                  aria-pressed={slide.correctAnswer === opt.value}
                   className={`flex-1 rounded-lg border px-3 py-2 text-xs ${
                     slide.correctAnswer === opt.value ? 'border-pulse-400 bg-pulse-500/20 text-white' : 'border-slate-700 text-slate-400'
                   }`}

@@ -17,6 +17,8 @@ interface PresenterSession {
   revealResults: () => void
   hideResults: () => void
   resetResponses: () => void
+  dismissQuestion: (questionId: string) => void
+  markQuestionAddressed: (questionId: string, addressed: boolean) => void
   endSession: () => void
 }
 
@@ -89,6 +91,9 @@ export function usePresenterSession(presentation: Presentation): PresenterSessio
     revealResults: () => socketRef.current?.emit('presenter:revealResults'),
     hideResults: () => socketRef.current?.emit('presenter:hideResults'),
     resetResponses: () => socketRef.current?.emit('presenter:resetResponses'),
+    dismissQuestion: (questionId) => socketRef.current?.emit('presenter:dismissQuestion', { questionId }),
+    markQuestionAddressed: (questionId, addressed) =>
+      socketRef.current?.emit('presenter:markQuestionAddressed', { questionId, addressed }),
     endSession: () => {
       endedRef.current = true
       socketRef.current?.emit('presenter:endSession')

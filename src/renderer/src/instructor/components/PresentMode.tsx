@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { isInteractiveSlide } from '@shared/types'
 import { SlideStatic } from '../../shared/SlideStatic'
 import { ResultsView } from '../../shared/ResultsView'
@@ -13,6 +13,7 @@ export function PresentMode(): JSX.Element | null {
   const [index, setIndex] = useState(0)
   const [showJoinPanel, setShowJoinPanel] = useState(true)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const cancelEndRef = useRef<HTMLButtonElement>(null)
 
   const session = usePresenterSession(presentation!)
 
@@ -25,14 +26,23 @@ export function PresentMode(): JSX.Element | null {
   }, [slide?.id])
 
   useEffect(() => {
+    if (confirmEnd) cancelEndRef.current?.focus()
+  }, [confirmEnd])
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent): void {
+      if (e.key === 'Escape') {
+        if (confirmEnd) setConfirmEnd(false)
+        else exitPresent()
+        return
+      }
+      if (confirmEnd) return
       if (e.key === 'ArrowRight' || e.key === ' ') setIndex((i) => Math.min(i + 1, slides.length - 1))
       if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0))
-      if (e.key === 'Escape') exitPresent()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [slides.length, exitPresent])
+  }, [slides.length, exitPresent, confirmEnd])
 
   if (!presentation || !slide) return null
 
@@ -56,12 +66,14 @@ export function PresentMode(): JSX.Element | null {
           <SlideStatic slide={slide} size="present" />
         </div>
         {showResults && session.results && (
-          <div className="flex w-full flex-col items-center justify-center pb-4 pt-6">
+          <div className="flex w-full flex-col items-center justify-center pb-4 pt-6" aria-live="polite">
             <ResultsView
               slide={slide}
               data={session.results.data}
               responseCount={session.state?.responseCount ?? session.results.responseCount}
               revealed={session.state?.resultsRevealed ?? false}
+              onDismissQuestion={slide.type === 'qna' ? session.dismissQuestion : undefined}
+              onMarkQuestionAddressed={slide.type === 'qna' ? session.markQuestionAddressed : undefined}
             />
           </div>
         )}
@@ -72,6 +84,7 @@ export function PresentMode(): JSX.Element | null {
         state={session.state}
         index={index}
         total={slides.length}
+        showJoinPanel={showJoinPanel}
         onPrev={() => setIndex((i) => Math.max(i - 1, 0))}
         onNext={() => setIndex((i) => Math.min(i + 1, slides.length - 1))}
         onToggleOpen={() => (session.state?.responsesOpen ? session.closeResponses() : session.openResponses())}
@@ -84,13 +97,22 @@ export function PresentMode(): JSX.Element | null {
 
       {confirmEnd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="w-96 rounded-xl border border-slate-700 bg-slate-900 p-6 text-center">
-            <p className="mb-1 text-lg font-semibold text-white">End this session?</p>
-            <p className="mb-5 text-sm text-slate-400">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-session-title"
+            aria-describedby="end-session-description"
+            className="w-96 rounded-xl border border-slate-700 bg-slate-900 p-6 text-center"
+          >
+            <p id="end-session-title" className="mb-1 text-lg font-semibold text-white">
+              End this session?
+            </p>
+            <p id="end-session-description" className="mb-5 text-sm text-slate-400">
               Students will be disconnected and all participation for this session will be discarded.
             </p>
             <div className="flex justify-center gap-3">
               <button
+                ref={cancelEndRef}
                 onClick={() => setConfirmEnd(false)}
                 className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200"
               >
