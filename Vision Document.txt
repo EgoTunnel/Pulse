@@ -1,0 +1,1144 @@
+# Pulse
+
+## Product Vision & Functional Specification
+
+### Interactive presentations for post-secondary education
+
+**Status:** Product Vision / Functional Requirements
+**Project Type:** Free, open-source educational software
+**Primary Audience:** Post-secondary educators
+**Secondary Audience:** Students participating in live classes
+
+---
+
+# 1. Executive Summary
+
+Pulse is a free, open-source interactive presentation tool designed for post-secondary educators.
+
+It provides a simple alternative to tools such as Mentimeter by combining conventional presentation slides with live classroom interaction.
+
+An instructor can create a presentation containing text, images, questions, polls, activities, and other interactive elements. During a class, students join the instructor's active session using a phone, tablet, or laptop. They respond to questions, submit comments, vote, rank items, and participate in activities. The instructor sees the results update in real time on the presentation screen.
+
+Pulse is deliberately designed around a **local-first, privacy-preserving philosophy**.
+
+The instructor's computer is the centre of the classroom experience. Presentations belong to the instructor. Students do not need accounts. Pulse should not require the collection of student identities or maintain a persistent student database.
+
+The goal is not to create another commercial educational SaaS platform.
+
+The goal is to create an excellent, simple, dependable tool that educators can download and use freely.
+
+> **Pulse lets instructors see the pulse of their classroom.**
+
+---
+
+# 2. Product Philosophy
+
+Pulse should be guided by several fundamental principles.
+
+## 2.1 Your classroom. Your data.
+
+The instructor should feel that Pulse belongs to them.
+
+They should be able to create presentations, save them locally, move them between computers, and conduct classroom sessions without depending upon a commercial cloud platform.
+
+The product should not require educators to surrender control of their instructional materials or student participation data.
+
+---
+
+## 2.2 Anonymous by default
+
+Students should not need to identify themselves to participate.
+
+Pulse should not require:
+
+* student accounts
+* names
+* email addresses
+* passwords
+* student numbers
+* institutional login credentials
+
+A student should simply join the current classroom session and participate.
+
+---
+
+## 2.3 Ephemeral classroom participation
+
+A classroom session is temporary.
+
+Student participation should exist for the purpose of conducting the current activity, rather than creating a permanent record of student behaviour.
+
+When the instructor ends the session, temporary participation information should be discarded.
+
+Pulse should not build profiles of students.
+
+---
+
+## 2.4 Zero-friction participation
+
+Students should be able to participate using devices they already have.
+
+They should not need to:
+
+* install an application
+* create an account
+* download anything
+* navigate a complicated interface
+
+The ideal student experience is:
+
+> **Scan → Join → Respond**
+
+---
+
+## 2.5 Zero-friction teaching
+
+An instructor should be able to go from having an idea to asking their class a question very quickly.
+
+The application should not require extensive technical knowledge.
+
+The instructor should be able to:
+
+> **Create → Present → Ask → See → Discuss**
+
+---
+
+## 2.6 Teaching comes first
+
+Pulse is not merely a polling application.
+
+Its purpose is to facilitate **interactive teaching**.
+
+Interactive elements should support activities such as:
+
+* checking understanding
+* revealing misconceptions
+* prompting discussion
+* soliciting opinions
+* encouraging prediction
+* collecting questions
+* brainstorming
+* reflection
+* formative assessment
+* knowledge checks
+* classroom icebreakers
+* opinion shifts
+* peer discussion
+* summarizing learning
+
+---
+
+# 3. Target Users
+
+## 3.1 Primary User: Instructor
+
+The primary user is a post-secondary educator.
+
+This could include:
+
+* college faculty
+* university professors
+* instructors
+* lecturers
+* teaching assistants
+* sessional faculty
+* instructional designers
+* workshop facilitators
+
+The instructor may be highly technically capable or completely non-technical.
+
+Pulse should assume that the instructor is busy and has very little patience for unnecessary configuration.
+
+---
+
+## 3.2 Secondary User: Student
+
+The student participates in a live classroom session.
+
+Students should be able to use:
+
+* smartphones
+* tablets
+* laptops
+* desktop computers
+
+Students should not need to install Pulse.
+
+The student interface should be substantially simpler than the instructor interface.
+
+---
+
+# 4. Core User Journey
+
+The fundamental Pulse experience should be:
+
+### Before class
+
+1. Instructor opens Pulse.
+2. Instructor creates a new presentation or opens an existing one.
+3. Instructor adds conventional and interactive slides.
+4. Instructor saves the presentation.
+
+### During class
+
+1. Instructor opens the presentation.
+2. Instructor enters presentation mode.
+3. Instructor starts a classroom session.
+4. Pulse displays a simple joining mechanism.
+5. Students join from their devices.
+6. Instructor presents slides.
+7. Interactive slides prompt students for responses.
+8. Responses appear live.
+9. Instructor discusses the results with the class.
+10. Instructor continues the presentation.
+11. Instructor ends the classroom session.
+
+### After class
+
+1. The presentation remains available to the instructor.
+2. Temporary student participation information is discarded.
+3. No student account or student history is created.
+
+---
+
+# 5. Presentation Creation
+
+Pulse should provide an intuitive presentation editor.
+
+The instructor should be able to:
+
+* create a new presentation
+* open an existing presentation
+* save a presentation
+* rename a presentation
+* duplicate a presentation
+* delete slides
+* reorder slides
+* duplicate slides
+* edit slides
+* preview slides
+* enter presentation mode
+
+Presentations should be visually appealing without requiring design expertise.
+
+---
+
+# 6. Slide Types
+
+Pulse should support both conventional presentation content and interactive classroom activities.
+
+## 6.1 Basic Slides
+
+At minimum:
+
+* Title slide
+* Text/content slide
+* Image slide
+* Image + text slide
+* Section/divider slide
+* Blank/custom slide
+
+Basic slides allow Pulse to function as a complete presentation tool rather than merely an add-on polling application.
+
+---
+
+# 7. Interactive Question Types
+
+Pulse should support a variety of interaction formats.
+
+The precise collection may evolve, but the initial product should support several fundamentally different forms of participation.
+
+## 7.1 Multiple Choice
+
+Students select one answer from several choices.
+
+The instructor can optionally designate a correct answer.
+
+The presentation can display:
+
+* response counts
+* percentages
+* visual bars
+* correct/incorrect results
+* total responses
+
+---
+
+## 7.2 Multiple Select
+
+Students may select multiple answers.
+
+Results should show how frequently each option was selected.
+
+---
+
+## 7.3 True / False
+
+A simple binary question.
+
+This should be particularly quick to create and useful for knowledge checks.
+
+---
+
+## 7.4 Rating / Scale
+
+Students respond along a numerical or labelled scale.
+
+Examples:
+
+> How confident are you about this concept?
+
+1 — Not confident
+2
+3
+4
+5 — Very confident
+
+---
+
+## 7.5 Likert Scale
+
+Students indicate their degree of agreement with a statement.
+
+For example:
+
+> AI will fundamentally change how I work.
+
+Strongly disagree → Strongly agree
+
+The instructor should see the distribution of responses.
+
+---
+
+## 7.6 Word Cloud
+
+Students submit short words or phrases.
+
+Pulse displays responses visually as a dynamically generated word cloud.
+
+Frequently submitted terms should become visually prominent.
+
+---
+
+## 7.7 Short Answer
+
+Students submit a brief written response.
+
+The presentation should display responses in a readable visual format.
+
+The instructor should be able to control whether responses appear immediately or only after they choose to reveal them.
+
+---
+
+## 7.8 Open Response
+
+Students can submit a longer written response.
+
+This should support classroom reflection, discussion prompts, and qualitative feedback.
+
+---
+
+## 7.9 Ranking
+
+Students rank a set of options.
+
+The presentation should display the aggregate ranking.
+
+---
+
+## 7.10 Numeric Response
+
+Students provide a number.
+
+Pulse can display useful aggregate information such as:
+
+* average
+* median
+* range
+* distribution
+
+This is particularly useful for prediction questions.
+
+---
+
+## 7.11 Q&A
+
+Students submit questions.
+
+Questions appear in a live instructor-controlled queue.
+
+The instructor should be able to:
+
+* view questions
+* display questions
+* dismiss questions
+* mark questions as addressed
+
+---
+
+## 7.12 Poll
+
+A general-purpose polling interaction.
+
+Polls should be quick to create and visually prominent during presentation.
+
+---
+
+# 8. Interactive Slide Templates
+
+Pulse should make interactive slides exceptionally easy to create.
+
+Rather than forcing instructors to construct every interaction manually, Pulse should provide templates.
+
+For example:
+
+### Quick Poll
+
+> What do you think?
+
+### Knowledge Check
+
+> Which answer is correct?
+
+### Prediction
+
+> What do you think will happen?
+
+### Opinion
+
+> How strongly do you agree?
+
+### Brainstorm
+
+> What comes to mind when you hear...?
+
+### Reflection
+
+> What is one thing you are taking away from this?
+
+### Confidence Check
+
+> How confident are you about this topic?
+
+### Discussion Starter
+
+> Choose the statement that best represents your view.
+
+Templates should reduce cognitive and design overhead.
+
+---
+
+# 9. Live Classroom Sessions
+
+A presentation and a live classroom session are distinct concepts.
+
+A presentation is saved.
+
+A classroom session is temporary.
+
+When the instructor starts a session, Pulse should create a temporary environment through which students can participate.
+
+The instructor should be shown a clear joining interface.
+
+For example:
+
+> ## Join the class
+>
+> **482 913**
+>
+> [QR CODE]
+>
+> Scan the QR code with your phone.
+
+The instructor should also see the number of connected participants.
+
+For example:
+
+> **27 students connected**
+
+---
+
+# 10. Student Joining Experience
+
+Joining should be exceptionally simple.
+
+A student should:
+
+1. Scan a QR code or enter a short room code.
+2. See the current Pulse classroom interface.
+3. Participate in the current activity.
+
+The student should not be asked to create an account.
+
+The student should not need to provide identifying information.
+
+The student interface should automatically adapt to the current question.
+
+For example:
+
+* multiple choice → large selectable buttons
+* rating → scale
+* word cloud → text field
+* ranking → drag/reorder interface
+* Q&A → text field
+* poll → appropriate selection interface
+
+---
+
+# 11. Live Results
+
+One of Pulse's central purposes is to make classroom responses visible immediately.
+
+When students respond, the presentation should update in real time.
+
+The instructor should not need to manually refresh the screen.
+
+Results should be visually clear from a distance.
+
+Possible visualizations include:
+
+* bar charts
+* percentages
+* response counts
+* distributions
+* word clouds
+* ranking displays
+* response cards
+* numerical summaries
+* live question queues
+
+---
+
+# 12. Instructor Control
+
+The instructor should remain in control of what the classroom sees.
+
+For interactive slides, the instructor should have controls such as:
+
+* Open responses
+* Close responses
+* Reveal results
+* Hide results
+* Reset responses
+* Advance
+* Return to previous slide
+* End question
+* End session
+
+The instructor should be able to decide whether responses are immediately visible or revealed later.
+
+This is important for pedagogical activities where students should answer independently before seeing what others selected.
+
+---
+
+# 13. Presentation Mode
+
+Presentation mode should be designed for projection onto a classroom display.
+
+The presentation should:
+
+* use large readable typography
+* minimize unnecessary interface elements
+* provide strong visual hierarchy
+* work well at common classroom resolutions
+* make interactive results visually compelling
+* clearly communicate when students should respond
+* clearly communicate when an interaction is closed
+* provide appropriate transitions between slides
+
+The presentation should feel like a polished presentation rather than a software dashboard.
+
+---
+
+# 14. Classroom Awareness
+
+Pulse should make the state of the classroom visible to the instructor.
+
+During an interaction, the instructor should be able to see information such as:
+
+> **31 students connected**
+
+> **28 responses**
+
+> **Responses open**
+
+or:
+
+> **Responses closed**
+
+This allows the instructor to know when it is appropriate to move on.
+
+---
+
+# 15. Anonymous Participation
+
+Pulse should treat anonymity as a fundamental feature rather than an optional privacy setting.
+
+The instructor should be able to see aggregate participation without being given a student's identity.
+
+For example:
+
+> 32 students connected
+> 29 responses received
+
+rather than:
+
+> Andrew — answered B
+> Sarah — answered C
+
+The system should not require student names to function.
+
+---
+
+# 16. Session Lifecycle
+
+A classroom session should have a clear lifecycle.
+
+### Before session
+
+No students are connected.
+
+### Session begins
+
+Students can join.
+
+### Active interaction
+
+Students can submit responses.
+
+### Interaction closes
+
+Students can no longer submit responses.
+
+### Next interaction
+
+A new question becomes active.
+
+### Session ends
+
+Temporary participation information is discarded.
+
+The instructor should receive a clear indication when the session has ended.
+
+---
+
+# 17. Presentation Persistence
+
+Presentations should belong to the instructor.
+
+An instructor should be able to save presentations and reopen them later.
+
+Presentation files should contain the information necessary to reproduce the presentation, including:
+
+* slide content
+* interactive questions
+* answer options
+* presentation settings
+* visual configuration
+* templates
+* other instructor-created presentation material
+
+Student participation should not become part of the persistent presentation unless explicitly saved by the instructor as part of an intentional feature.
+
+---
+
+# 18. Portability
+
+An instructor should be able to move their presentations between computers.
+
+They should not be locked into a Pulse account or cloud environment.
+
+A presentation should be portable and independently usable.
+
+The instructor should be able to:
+
+* copy a presentation
+* back it up
+* share it with another instructor
+* move it to another computer
+* create duplicate versions
+
+---
+
+# 19. Privacy
+
+Privacy should be one of Pulse's defining characteristics.
+
+Pulse should not require:
+
+* student accounts
+* persistent student identifiers
+* student profiles
+* advertising identifiers
+* behavioural tracking
+* student analytics
+* unnecessary telemetry
+* cloud-based student databases
+
+The product should communicate its privacy model clearly to instructors.
+
+The instructor should be able to understand where their presentation and classroom participation information resides.
+
+---
+
+# 20. Offline / Low-Connectivity Use
+
+Pulse should be designed to function in environments where internet connectivity is unreliable or unavailable, to the greatest extent possible.
+
+The instructor should not be dependent upon a functioning external service simply to present a saved presentation.
+
+The classroom interaction experience should be designed around the local classroom environment.
+
+This is particularly important for:
+
+* classrooms with unreliable Wi-Fi
+* temporary teaching spaces
+* guest networks
+* workshops
+* conference rooms
+* locations without reliable internet access
+
+---
+
+# 21. Installation
+
+Pulse should be downloadable as a conventional desktop application.
+
+A faculty member should be able to:
+
+1. Download Pulse.
+2. Install it.
+3. Open it.
+4. Start creating a presentation.
+
+The installation process should be approachable for a normal educator rather than requiring technical knowledge.
+
+The project should provide installers for the major desktop platforms appropriate to the project.
+
+---
+
+# 22. Updates
+
+The application should provide a straightforward way for educators to obtain newer versions.
+
+Updates should not require the instructor to understand software development or manually rebuild the application.
+
+The exact update mechanism is an implementation decision.
+
+The product requirement is simply:
+
+> **Keeping Pulse current should be easy.**
+
+---
+
+# 23. Accessibility
+
+Accessibility should be treated as a core requirement.
+
+Pulse should support accessible use by both instructors and students.
+
+This includes consideration of:
+
+* keyboard navigation
+* screen readers
+* sufficient text size
+* understandable visual hierarchy
+* colour-independent communication
+* readable charts
+* accessible controls
+* appropriate contrast
+* accessible student response interfaces
+
+Interactive results should not communicate essential information through colour alone.
+
+---
+
+# 24. Responsive Student Experience
+
+The student interface should work well on a wide range of screen sizes.
+
+It should be usable on:
+
+* modern smartphones
+* tablets
+* laptops
+* desktop browsers
+
+The interface should favour large controls and minimal text entry where appropriate.
+
+The student should spend their attention answering the instructor's question rather than figuring out the interface.
+
+---
+
+# 25. Instructor Experience
+
+Pulse should feel calm and predictable.
+
+The instructor should not have to think about software mechanics while teaching.
+
+Important actions should be obvious.
+
+The application should avoid unnecessary configuration screens.
+
+The instructor should always understand:
+
+* what slide they are on
+* whether students are connected
+* whether responses are open
+* how many responses have arrived
+* what students currently see
+* how to advance
+* how to end the session
+
+---
+
+# 26. Error Handling
+
+When something goes wrong, Pulse should communicate the problem in ordinary language.
+
+The instructor should not be expected to understand:
+
+* ports
+* IP addresses
+* network protocols
+* server states
+* connection handshakes
+* technical error codes
+
+Instead of:
+
+> `WebSocket connection failed: ECONNREFUSED`
+
+the instructor should see something like:
+
+> **Students can't connect right now.**
+>
+> Pulse is having trouble making the classroom session available.
+>
+> Check that your computer is connected to the classroom network.
+
+Technical details may be available separately for troubleshooting.
+
+---
+
+# 27. Classroom Scale
+
+Pulse should support ordinary post-secondary classroom sizes comfortably.
+
+It should be suitable for:
+
+* small seminars
+* classrooms
+* lecture halls
+* workshops
+* professional development sessions
+
+The product should aim to support at least typical classroom participation without noticeable degradation in the live experience.
+
+---
+
+# 28. Instructor Stories
+
+## Creating a presentation
+
+> **As an instructor, I want to create a presentation containing both normal slides and interactive questions so that I can teach an entire class from Pulse.**
+
+## Creating a quick question
+
+> **As an instructor, I want to add a poll quickly so that I can spontaneously ask my class something without interrupting the flow of my lecture.**
+
+## Checking understanding
+
+> **As an instructor, I want to ask a knowledge-check question and immediately see the distribution of answers so that I can determine whether my students understand the concept.**
+
+## Revealing results later
+
+> **As an instructor, I want students to answer before they see the results so that other students' responses don't influence their answers.**
+
+## Seeing the classroom
+
+> **As an instructor, I want to see how many students have responded so that I know when the class is ready to move on.**
+
+## Discussing unexpected results
+
+> **As an instructor, I want to display anonymous student responses so that I can use them as the basis for classroom discussion.**
+
+## Brainstorming
+
+> **As an instructor, I want students to submit words or ideas and see them form a live word cloud so that I can quickly surface the collective thinking of the room.**
+
+## Collecting questions
+
+> **As an instructor, I want students to submit questions anonymously so that students who are reluctant to speak publicly can still participate.**
+
+## Prediction
+
+> **As an instructor, I want students to predict an outcome before I reveal it so that I can create curiosity and encourage deeper engagement.**
+
+## Reflection
+
+> **As an instructor, I want to ask students to reflect on what they have learned so that I can close a lesson with a quick formative activity.**
+
+## Reusing presentations
+
+> **As an instructor, I want to save and reopen my presentations so that I can reuse and improve my teaching materials.**
+
+## Portability
+
+> **As an instructor, I want to move my presentations between computers so that I am not dependent upon a particular machine or account.**
+
+## Privacy
+
+> **As an instructor, I want student participation to be anonymous and temporary so that I can use classroom interaction without creating unnecessary student data.**
+
+## Reliability
+
+> **As an instructor, I want Pulse to continue working even when external internet services are unavailable so that a technical outage does not derail my class.**
+
+---
+
+# 29. Student Stories
+
+## Joining quickly
+
+> **As a student, I want to join a classroom session by scanning a QR code so that I can participate without typing a complicated address.**
+
+## No account
+
+> **As a student, I want to participate without creating an account so that I can answer the instructor's question immediately.**
+
+## No installation
+
+> **As a student, I want to participate using my existing browser so that I don't have to install another application.**
+
+## Anonymous participation
+
+> **As a student, I want to answer questions without having my name displayed so that I can participate honestly without worrying about public judgement.**
+
+## Mobile participation
+
+> **As a student, I want the response interface to work well on my phone so that I can participate from my seat.**
+
+## Clear instructions
+
+> **As a student, I want the question and response options to be obvious so that I can focus on answering rather than navigating the software.**
+
+## Confirmation
+
+> **As a student, I want to know that my response was successfully submitted so that I don't have to wonder whether my answer was received.**
+
+---
+
+# 30. Instructor Presentation Stories
+
+## Teaching from one application
+
+> **As an instructor, I want my presentation and classroom interactions to exist in one place so that I don't have to switch between presentation software and a polling website while teaching.**
+
+## Live feedback
+
+> **As an instructor, I want classroom responses to appear automatically so that I can respond to what my students are thinking in the moment.**
+
+## Visual engagement
+
+> **As an instructor, I want live results to look polished and presentation-ready so that classroom interaction feels like an integrated part of my lesson rather than an external website.**
+
+## Spontaneous teaching
+
+> **As an instructor, I want to create or modify an interactive question quickly so that I can respond to something that emerges during class.**
+
+---
+
+# 31. Example Teaching Scenario
+
+An instructor is teaching a class about artificial intelligence.
+
+They create the following presentation:
+
+### Slide 1
+
+**Artificial Intelligence and Work**
+
+### Slide 2
+
+A conventional content slide explaining automation.
+
+### Slide 3 — Prediction
+
+> **Which job category do you think will be most affected by generative AI?**
+
+Students vote.
+
+The results appear as a live bar chart.
+
+The instructor discusses the unexpected result.
+
+### Slide 4 — Discussion
+
+> **Why do you think that category was selected?**
+
+Students discuss with the people around them.
+
+### Slide 5 — Word Cloud
+
+> **What is one word you associate with AI and employment?**
+
+Responses appear as a word cloud.
+
+### Slide 6 — Knowledge Check
+
+> **Which of these statements is most accurate?**
+
+Students answer.
+
+The instructor reveals the correct answer.
+
+### Slide 7 — Confidence
+
+> **How confident are you that you could explain the difference between automation and augmentation?**
+
+Students respond on a 1–5 scale.
+
+The instructor sees that most students selected 2 or 3.
+
+They decide to spend another five minutes explaining the concept.
+
+This is the fundamental value of Pulse:
+
+> **The presentation responds to the classroom rather than simply being delivered to it.**
+
+---
+
+# 32. What Pulse Should Not Become
+
+Pulse should deliberately avoid becoming:
+
+### A social network
+
+There should be no student profiles, feeds, follows, or social graphs.
+
+### A learning management system
+
+Pulse should not attempt to replace Canvas, Blackboard, Moodle, or other LMS platforms.
+
+### A student surveillance platform
+
+Pulse should not track student behaviour across classes or build student profiles.
+
+### A cloud document platform
+
+Cloud collaboration and persistent online workspaces are not central to the product.
+
+### A complicated presentation editor
+
+Pulse does not need to replace PowerPoint or Google Slides in every respect.
+
+### A commercial engagement platform
+
+The goal is not to maximize engagement metrics, subscriptions, or institutional lock-in.
+
+### An analytics system
+
+The goal is to help an instructor understand the classroom **now**, not construct a permanent data history about students.
+
+---
+
+# 33. MVP Definition
+
+The first usable version of Pulse should focus on the essential classroom experience.
+
+It should allow an instructor to:
+
+1. Create a presentation.
+2. Add basic content slides.
+3. Add multiple-choice questions.
+4. Add word-cloud questions.
+5. Add scale/rating questions.
+6. Save and reopen presentations.
+7. Start a classroom session.
+8. Display a QR code and/or short joining code.
+9. Allow students to join without accounts.
+10. Accept anonymous responses.
+11. Display results in real time.
+12. Advance through the presentation.
+13. Control when responses open and close.
+14. End the session.
+15. Discard temporary student participation information.
+
+If these capabilities work extremely well, Pulse already provides a meaningful alternative to the core Mentimeter experience.
+
+---
+
+# 34. Future Possibilities
+
+The following ideas may be considered after the core experience is excellent.
+
+Potential future capabilities include:
+
+* additional question types
+* richer presentation themes
+* animated results
+* drag-and-drop activities
+* matching activities
+* image-based questions
+* annotation activities
+* student drawing
+* collaborative brainstorming
+* peer voting
+* "before and after" questions
+* confidence versus correctness comparisons
+* reusable activity templates
+* presentation import/export
+* speaker notes
+* presenter view
+* timers
+* sound effects
+* accessibility enhancements
+* instructor-created template libraries
+* community-created templates
+* optional integration with LMS platforms
+* optional export of aggregate classroom results
+
+These features should not compromise the core philosophy of simplicity, privacy, local ownership, and zero student accounts.
+
+---
+
+# 35. Success Criteria
+
+Pulse will be successful if an instructor can reasonably say:
+
+> "I downloaded this, installed it, and understood how to use it without anyone showing me."
+
+It will be especially successful if an instructor can:
+
+> Create a question in under a minute.
+
+> Start a classroom session without technical assistance.
+
+> Have students participating within moments.
+
+> See meaningful results immediately.
+
+> Continue teaching without fighting the software.
+
+> Close the session knowing that unnecessary student information has not been retained.
+
+And ultimately:
+
+> **"I don't miss Mentimeter."**
+
+---
+
+# 36. The Product in One Sentence
+
+> **Pulse is a free, open-source, local-first interactive presentation tool that lets post-secondary educators ask questions, gather anonymous responses, and see the pulse of their classroom in real time—without student accounts, subscriptions, or persistent student data.**
+
+---
+
+# 37. The Product in Three Sentences
+
+Pulse puts interactive classroom presentations on the instructor's computer.
+
+Students join temporarily from their existing devices and respond anonymously to polls, questions, activities, and prompts while the instructor sees the results live.
+
+It is intentionally simple, private, portable, and free: **your classroom, your presentation, your data.**
