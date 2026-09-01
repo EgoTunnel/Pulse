@@ -1,6 +1,14 @@
 import { app, type BrowserWindow } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import electronUpdaterPkg from 'electron-updater'
 import type { UpdaterStatus } from '@shared/types'
+
+// electron-updater is CommonJS and doesn't declare proper ESM named exports —
+// `import { autoUpdater } from 'electron-updater'` typechecks (its .d.ts
+// claims a named export) but throws at runtime under Node's ESM loader
+// ("Named export 'autoUpdater' not found"). Importing the default and
+// destructuring is the reliable way to pull a named value out of a CJS
+// module here.
+const { autoUpdater } = electronUpdaterPkg
 
 const RECHECK_INTERVAL_MS = 4 * 60 * 60 * 1000 // 4 hours
 
