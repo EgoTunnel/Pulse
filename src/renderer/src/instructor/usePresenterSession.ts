@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import type { ClientToServerEvents, Presentation, ResultsSnapshot, ServerToClientEvents, SessionStateMessage } from '@shared/types'
+import type {
+  ClientToServerEvents,
+  ConnectivitySignal,
+  Presentation,
+  ResultsSnapshot,
+  ServerToClientEvents,
+  SessionStateMessage
+} from '@shared/types'
 import type { JoinInfo } from '../../../main/server'
 
 type PresenterSocket = Socket<ServerToClientEvents, ClientToServerEvents>
@@ -9,6 +16,7 @@ interface PresenterSession {
   joinInfo: JoinInfo | null
   state: SessionStateMessage | null
   results: ResultsSnapshot | null
+  connectivity: ConnectivitySignal
   connected: boolean
   error: string | null
   setSlide: (slideId: string) => void
@@ -31,6 +39,7 @@ export function usePresenterSession(presentation: Presentation): PresenterSessio
   const [joinInfo, setJoinInfo] = useState<JoinInfo | null>(null)
   const [state, setState] = useState<SessionStateMessage | null>(null)
   const [results, setResults] = useState<ResultsSnapshot | null>(null)
+  const [connectivity, setConnectivity] = useState<ConnectivitySignal>({ anyDeviceReached: false, firstReachedAt: null })
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const socketRef = useRef<PresenterSocket | null>(null)
@@ -62,6 +71,7 @@ export function usePresenterSession(presentation: Presentation): PresenterSessio
         socket.on('disconnect', () => setConnected(false))
         socket.on('session:state', setState)
         socket.on('session:results', setResults)
+        socket.on('session:connectivity', setConnectivity)
         socket.on('presenter:error', setError)
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Could not start the classroom session.')
@@ -83,6 +93,7 @@ export function usePresenterSession(presentation: Presentation): PresenterSessio
     joinInfo,
     state,
     results,
+    connectivity,
     connected,
     error,
     setSlide: (slideId) => socketRef.current?.emit('presenter:setSlide', { slideId }),

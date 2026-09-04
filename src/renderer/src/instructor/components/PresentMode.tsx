@@ -6,6 +6,10 @@ import { useEditorStore } from '../store'
 import { usePresenterSession } from '../usePresenterSession'
 import { JoinPanel } from './JoinPanel'
 import { ControlBar } from './ControlBar'
+import { ConnectionHelp } from './ConnectionHelp'
+
+/** How long to wait after the session becomes joinable before proactively suggesting Wi-Fi troubleshooting if nothing has connected. */
+const NO_CONNECTION_HINT_DELAY_MS = 45_000
 
 export function PresentMode(): JSX.Element | null {
   const presentation = useEditorStore((s) => s.presentation)
@@ -13,9 +17,19 @@ export function PresentMode(): JSX.Element | null {
   const [index, setIndex] = useState(0)
   const [showJoinPanel, setShowJoinPanel] = useState(true)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const [showTroubleshooting, setShowTroubleshooting] = useState(false)
   const cancelEndRef = useRef<HTMLButtonElement>(null)
+  const closeTroubleshootingRef = useRef<HTMLButtonElement>(null)
 
   const session = usePresenterSession(presentation!)
+
+  useEffect(() => {
+    if (!session.joinInfo) return
+    const t = setTimeout(() => {
+      if (!session.connectivity.anyDeviceReached) setShowTroubleshooting(true)
+    }, NO_CONNECTION_HINT_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [session.joinInfo, session.connectivity.anyDeviceReached])
 
   const slides = presentation?.slides ?? []
   const slide = slides[index]
@@ -30,19 +44,24 @@ export function PresentMode(): JSX.Element | null {
   }, [confirmEnd])
 
   useEffect(() => {
+    if (showTroubleshooting) closeTroubleshootingRef.current?.focus()
+  }, [showTroubleshooting])
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') {
         if (confirmEnd) setConfirmEnd(false)
+        else if (showTroubleshooting) setShowTroubleshooting(false)
         else exitPresent()
         return
       }
-      if (confirmEnd) return
+      if (confirmEnd || showTroubleshooting) return
       if (e.key === 'ArrowRight' || e.key === ' ') setIndex((i) => Math.min(i + 1, slides.length - 1))
       if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [slides.length, exitPresent, confirmEnd])
+  }, [slides.length, exitPresent, confirmEnd, showTroubleshooting])
 
   if (!presentation || !slide) return null
 
@@ -58,7 +77,11 @@ export function PresentMode(): JSX.Element | null {
       )}
 
       {showJoinPanel && session.joinInfo && (
-        <JoinPanel joinInfo={session.joinInfo} participantCount={session.state?.participantCount ?? 0} />
+        <JoinPanel
+          joinInfo={session.joinInfo}
+          participantCount={session.state?.participantCount ?? 0}
+          onTroubleshoot={() => setShowTroubleshooting(true)}
+        />
       )}
 
       <div className="flex flex-1 flex-col items-center justify-center overflow-hidden px-10 pb-20 pt-10">
@@ -126,6 +149,31 @@ export function PresentMode(): JSX.Element | null {
                 className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white"
               >
                 End session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTroubleshooting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="troubleshoot-title"
+            className="w-[32rem] max-w-full rounded-xl border border-slate-700 bg-slate-900 p-6"
+          >
+            <p id="troubleshoot-title" className="mb-3 text-lg font-semibold text-white">
+              No devices have connected
+            </p>
+            <ConnectionHelp />
+            <div className="mt-5 flex justify-end">
+              <button
+                ref={closeTroubleshootingRef}
+                onClick={() => setShowTroubleshooting(false)}
+                className="rounded-lg bg-pulse-500 px-4 py-2 text-sm font-medium text-white hover:bg-pulse-400"
+              >
+                Got it
               </button>
             </div>
           </div>

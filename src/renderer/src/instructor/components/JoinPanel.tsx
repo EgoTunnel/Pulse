@@ -1,6 +1,12 @@
 import type { JoinInfo } from '../../../../main/server'
 
-export function JoinPanel({ joinInfo, participantCount }: { joinInfo: JoinInfo; participantCount: number }): JSX.Element {
+interface Props {
+  joinInfo: JoinInfo
+  participantCount: number
+  onTroubleshoot: () => void
+}
+
+export function JoinPanel({ joinInfo, participantCount, onTroubleshoot }: Props): JSX.Element {
   return (
     <div
       role="region"
@@ -26,6 +32,9 @@ export function JoinPanel({ joinInfo, participantCount }: { joinInfo: JoinInfo; 
         </span>
         {participantCount} {participantCount === 1 ? 'student' : 'students'} connected
       </div>
+      <button onClick={onTroubleshoot} className="mt-3 text-xs text-slate-500 underline hover:text-slate-300">
+        Not seeing anyone join?
+      </button>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import QRCode from 'qrcode'
 import { app } from 'electron'
 import type {
   ClientToServerEvents,
+  ConnectivitySignal,
   Presentation,
   ServerToClientEvents,
   SessionStateMessage
@@ -42,6 +43,7 @@ export class LocalServer {
   private io: SocketIOServer<ClientToServerEvents, ServerToClientEvents>
   private session: SessionManager | null = null
   private port: number | null = null
+  private connectivity: ConnectivitySignal = { anyDeviceReached: false, firstReachedAt: null }
 
   constructor() {
     this.app = express()
@@ -78,6 +80,7 @@ export class LocalServer {
       // In dev, the student page is served by the Vite dev server (also
       // bound to 0.0.0.0), so phones on the LAN can load it directly.
       this.app.get(['/', '/join', '/join/*'], (req, res) => {
+        this.markDeviceReached()
         const address = getLocalNetworkAddress() ?? 'localhost'
         const match = req.path.match(/\/join\/([0-9]+)/)
         const query = match ? `?code=${match[1]}` : ''
@@ -98,9 +101,11 @@ export class LocalServer {
       // than serving the file directly, or the browser resolves
       // "./assets/…" against "/join/" and every asset 404s.
       this.app.get(['/', '/join'], (_req, res) => {
+        this.markDeviceReached()
         res.sendFile(path.join(rendererDir, 'student.html'))
       })
       this.app.get('/join/*', (req, res) => {
+        this.markDeviceReached()
         const match = req.path.match(/\/join\/([0-9]+)/)
         res.redirect(match ? `/student.html?code=${match[1]}` : '/student.html')
       })
@@ -170,6 +175,7 @@ export class LocalServer {
           role = 'presenter'
           socket.join(roomKey(this.session.roomCode))
           ack({ ok: true, state: this.session.getState() })
+          socket.emit('session:connectivity', this.connectivity)
           this.broadcastResults()
         })
       )
@@ -274,6 +280,13 @@ export class LocalServer {
     if (snapshot) this.io.to(roomKey(this.session.roomCode)).emit('session:results', snapshot)
   }
 
+  /** Called the instant any device's browser reaches a join route — proof the network path works, regardless of whether they go on to actually join. */
+  private markDeviceReached(): void {
+    if (this.connectivity.anyDeviceReached) return
+    this.connectivity = { anyDeviceReached: true, firstReachedAt: new Date().toISOString() }
+    if (this.session) this.io.to(roomKey(this.session.roomCode)).emit('session:connectivity', this.connectivity)
+  }
+
   async start(presentation: Presentation, preferredPort = LOCAL_SERVER_PORT): Promise<JoinInfo> {
     if (!this.port) {
       this.port = await new Promise<number>((resolve, reject) => {
@@ -286,6 +299,7 @@ export class LocalServer {
     }
 
     this.session = new SessionManager(presentation)
+    this.connectivity = { anyDeviceReached: false, firstReachedAt: null }
     return this.buildJoinInfo()
   }
 

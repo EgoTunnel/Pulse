@@ -313,10 +313,26 @@ export interface QnaEntry {
 // Socket.IO event contracts
 // ---------------------------------------------------------------------------
 
+/**
+ * Whether ANY device has managed to reach this server over the network yet
+ * — set the instant a single HTTP request lands on the join route,
+ * regardless of whether that device ever successfully joins. Many campus
+ * Wi-Fi networks (eduroam and most institutional "Student" SSIDs) enable
+ * client/AP isolation, which silently blocks phone-to-laptop connections
+ * even though both are on the same network and the QR code looks fine. This
+ * is the one reliable signal that distinguishes "the network is blocking
+ * this" from "students just haven't scanned yet."
+ */
+export interface ConnectivitySignal {
+  anyDeviceReached: boolean
+  firstReachedAt: string | null
+}
+
 /** Events the server emits. */
 export interface ServerToClientEvents {
   'session:state': (state: SessionStateMessage) => void
   'session:results': (snapshot: ResultsSnapshot) => void
+  'session:connectivity': (signal: ConnectivitySignal) => void
   'session:ended': () => void
   'presenter:error': (message: string) => void
 }

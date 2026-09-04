@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useEditorStore } from '../store'
+import { TestConnection } from './TestConnection'
 
 export function Library(): JSX.Element {
   const library = useEditorStore((s) => s.library)
@@ -11,6 +12,7 @@ export function Library(): JSX.Element {
   const openError = useEditorStore((s) => s.openError)
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [testingConnection, setTestingConnection] = useState(false)
 
   useEffect(() => {
     refreshLibrary()
@@ -30,6 +32,13 @@ export function Library(): JSX.Element {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setTestingConnection(true)}
+            title="Check whether phones on this Wi-Fi can reach this computer, before you're in front of a class"
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
+          >
+            Test connection
+          </button>
+          <button
             onClick={() => openFromDisk()}
             title="Bring in a presentation from a USB drive, email attachment, or anywhere else on this computer"
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
@@ -44,6 +53,8 @@ export function Library(): JSX.Element {
           </button>
         </div>
       </header>
+
+      {testingConnection && <TestConnection onClose={() => setTestingConnection(false)} />}
 
       {openError && (
         <p role="alert" className="mb-6 rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-300">
