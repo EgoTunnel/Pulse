@@ -8,11 +8,22 @@ interface Props {
   revealed: boolean
   onDismissQuestion?: (questionId: string) => void
   onMarkQuestionAddressed?: (questionId: string, addressed: boolean) => void
+  onRemoveResponse?: (responseId: string) => void
+  onBanWord?: (word: string) => void
 }
 
 const BAR_COLORS = ['bg-pulse-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500', 'bg-cyan-500']
 
-export function ResultsView({ slide, data, responseCount, revealed, onDismissQuestion, onMarkQuestionAddressed }: Props): JSX.Element {
+export function ResultsView({
+  slide,
+  data,
+  responseCount,
+  revealed,
+  onDismissQuestion,
+  onMarkQuestionAddressed,
+  onRemoveResponse,
+  onBanWord
+}: Props): JSX.Element {
   if (!revealed) {
     return (
       <div className="flex flex-col items-center gap-2 text-slate-300">
@@ -48,14 +59,23 @@ export function ResultsView({ slide, data, responseCount, revealed, onDismissQue
       return <LabeledBars counts={counts} total={responseCount} />
     }
     case 'words':
-      return <WordCloud words={data.words} />
+      return <WordCloud words={data.words} onBanWord={onBanWord} />
     case 'text':
       return (
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
           {data.entries.length === 0 && <p className="text-slate-400">No responses yet.</p>}
           {data.entries.map((entry) => (
-            <div key={entry.id} className="rounded-xl bg-white/10 p-4 text-left text-white">
-              {entry.text}
+            <div key={entry.id} className="flex items-start gap-3 rounded-xl bg-white/10 p-4 text-left text-white">
+              <p className="flex-1">{entry.text}</p>
+              {onRemoveResponse && (
+                <button
+                  onClick={() => onRemoveResponse(entry.id)}
+                  aria-label="Remove this response"
+                  className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200 hover:bg-red-500/30 hover:text-red-200"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -179,30 +199,44 @@ function LabeledBars({
   )
 }
 
-function WordCloud({ words }: { words: { text: string; count: number }[] }): JSX.Element {
+function WordCloud({ words, onBanWord }: { words: { text: string; count: number }[]; onBanWord?: (word: string) => void }): JSX.Element {
   if (words.length === 0) return <p className="text-slate-400">No words yet.</p>
   const max = Math.max(...words.map((w) => w.count))
   return (
     <>
       {/* Word size is the only visual signal here, which doesn't reach screen readers —
-          give them the same ranking as an ordered, readable list instead. */}
-      <ol className="sr-only">
+          give them the same ranking as a plain readable list instead. The word text
+          itself is aria-hidden below to avoid announcing it twice; the remove button's
+          own aria-label carries the word, and stays in tab order (opacity, not
+          display:none) so it's reachable by keyboard, not just a mouse hover. */}
+      <ul className="sr-only">
         {words.map((w) => (
           <li key={w.text}>
             {w.text}: {w.count} {w.count === 1 ? 'response' : 'responses'}
           </li>
         ))}
-      </ol>
-      <div className="flex max-w-4xl flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-hidden="true">
+      </ul>
+      <div className="flex max-w-4xl flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {words.map((w) => {
           const scale = 1 + (w.count / max) * 2.2
           return (
-            <span
-              key={w.text}
-              className="font-semibold text-white"
-              style={{ fontSize: `${scale}rem`, opacity: 0.55 + (w.count / max) * 0.45 }}
-            >
-              {w.text}
+            <span key={w.text} className="group relative inline-flex items-center">
+              <span
+                aria-hidden="true"
+                className="font-semibold text-white"
+                style={{ fontSize: `${scale}rem`, opacity: 0.55 + (w.count / max) * 0.45 }}
+              >
+                {w.text}
+              </span>
+              {onBanWord && (
+                <button
+                  onClick={() => onBanWord(w.text)}
+                  aria-label={`Remove word "${w.text}"`}
+                  className="absolute -right-3 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500/80 text-xs text-white opacity-0 hover:bg-red-500 focus-visible:opacity-100 group-hover:opacity-100"
+                >
+                  ✕
+                </button>
+              )}
             </span>
           )
         })}

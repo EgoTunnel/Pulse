@@ -371,5 +371,9 @@ export interface ClientToServerEvents {
   'presenter:resetResponses': () => void
   'presenter:dismissQuestion': (payload: { questionId: string }) => void
   'presenter:markQuestionAddressed': (payload: { questionId: string; addressed: boolean }) => void
+  /** Removes one student's response to the current slide (short answer / open response) — the presenter's fast override for anything the profanity filter missed. */
+  'presenter:removeResponse': (payload: { responseId: string }) => void
+  /** Bans a word from the current slide's word cloud, now and for any future submission of it this slide. */
+  'presenter:banWord': (payload: { word: string }) => void
   'presenter:endSession': () => void
 }

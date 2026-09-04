@@ -42,6 +42,8 @@ export class SessionManager {
   private responses = new Map<string, Map<string, StoredResponse>>()
   /** slideId -> accumulated Q&A submissions (students may ask more than one question). */
   private qnaEntries = new Map<string, QnaEntry[]>()
+  /** slideId -> words the presenter has manually banned from that slide's word cloud (case-insensitive, matched post-normalization). */
+  private bannedWords = new Map<string, Set<string>>()
 
   constructor(presentation: Presentation) {
     this.presentation = presentation
@@ -112,6 +114,23 @@ export class SessionManager {
     if (!this.currentSlideId) return
     this.responses.delete(this.currentSlideId)
     this.qnaEntries.delete(this.currentSlideId)
+    this.bannedWords.delete(this.currentSlideId)
+  }
+
+  /** Removes one student's response to the current slide — the presenter's fast override for anything a filter missed. `responseId` is the socket id it was stored under. */
+  removeResponse(responseId: string): void {
+    if (!this.currentSlideId) return
+    this.responses.get(this.currentSlideId)?.delete(responseId)
+  }
+
+  /** Bans a word from the current slide's word cloud — strips it from the tally now and any future submission of it. */
+  banWord(word: string): void {
+    if (!this.currentSlideId) return
+    const normalized = word.trim().toLowerCase()
+    if (!normalized) return
+    const set = this.bannedWords.get(this.currentSlideId) ?? new Set<string>()
+    set.add(normalized)
+    this.bannedWords.set(this.currentSlideId, set)
   }
 
   dismissQuestion(questionId: string): void {
@@ -149,8 +168,17 @@ export class SessionManager {
     const slide = this.currentSlide()
     if (!slide) return { ok: false, error: 'That question is no longer active.' }
 
-    const value = validateResponseValue(slide, rawValue)
-    if (!value) return { ok: false, error: 'That response is not valid for this question.' }
+    const validated = validateResponseValue(slide, rawValue)
+    if (!validated.ok) {
+      return {
+        ok: false,
+        error:
+          validated.reason === 'blocked'
+            ? 'Please keep responses appropriate for the classroom.'
+            : 'That response is not valid for this question.'
+      }
+    }
+    const value = validated.value
 
     if (value.kind === 'question') {
       const list = this.qnaEntries.get(slideId) ?? []
@@ -180,14 +208,15 @@ export class SessionManager {
     }
 
     const stored = [...(this.responses.get(slide.id)?.values() ?? [])]
-    const values = stored.map((s) => s.value)
-    const data = computeResultsData(slide, values)
+    const banned = this.bannedWords.get(slide.id) ?? new Set<string>()
+    const data = computeResultsData(slide, stored, banned)
     if (!data) return null
-    return { slideId: slide.id, responseCount: values.length, data }
+    return { slideId: slide.id, responseCount: stored.length, data }
   }
 }
 
-function computeResultsData(slide: Slide, values: ResponseValue[]): ResultsData | null {
+function computeResultsData(slide: Slide, stored: StoredResponse[], bannedWords: Set<string>): ResultsData | null {
+  const values = stored.map((s) => s.value)
   switch (slide.type) {
     case 'multipleChoice':
     case 'poll': {
@@ -231,7 +260,7 @@ function computeResultsData(slide: Slide, values: ResponseValue[]): ResultsData 
         if (v.kind !== 'words') continue
         for (const raw of v.words) {
           const word = raw.trim().toLowerCase().slice(0, 40)
-          if (!word) continue
+          if (!word || bannedWords.has(word)) continue
           tally.set(word, (tally.get(word) ?? 0) + 1)
         }
       }
@@ -240,7 +269,9 @@ function computeResultsData(slide: Slide, values: ResponseValue[]): ResultsData 
     }
     case 'shortAnswer':
     case 'openResponse': {
-      const entries = values.filter((v) => v.kind === 'text').map((v, i) => ({ id: String(i), text: (v as { text: string }).text }))
+      const entries = stored
+        .filter((s): s is StoredResponse & { value: { kind: 'text'; text: string } } => s.value.kind === 'text')
+        .map((s) => ({ id: s.socketId, text: s.value.text }))
       return { kind: 'text', entries }
     }
     case 'ranking': {

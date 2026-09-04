@@ -27,6 +27,8 @@ interface PresenterSession {
   resetResponses: () => void
   dismissQuestion: (questionId: string) => void
   markQuestionAddressed: (questionId: string, addressed: boolean) => void
+  removeResponse: (responseId: string) => void
+  banWord: (word: string) => void
   endSession: () => void
 }
 
@@ -105,6 +107,8 @@ export function usePresenterSession(presentation: Presentation): PresenterSessio
     dismissQuestion: (questionId) => socketRef.current?.emit('presenter:dismissQuestion', { questionId }),
     markQuestionAddressed: (questionId, addressed) =>
       socketRef.current?.emit('presenter:markQuestionAddressed', { questionId, addressed }),
+    removeResponse: (responseId) => socketRef.current?.emit('presenter:removeResponse', { responseId }),
+    banWord: (word) => socketRef.current?.emit('presenter:banWord', { word }),
     endSession: () => {
       endedRef.current = true
       socketRef.current?.emit('presenter:endSession')

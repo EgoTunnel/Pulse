@@ -97,6 +97,10 @@ export function PresentMode(): JSX.Element | null {
               revealed={session.state?.resultsRevealed ?? false}
               onDismissQuestion={slide.type === 'qna' ? session.dismissQuestion : undefined}
               onMarkQuestionAddressed={slide.type === 'qna' ? session.markQuestionAddressed : undefined}
+              onRemoveResponse={
+                slide.type === 'shortAnswer' || slide.type === 'openResponse' ? session.removeResponse : undefined
+              }
+              onBanWord={slide.type === 'wordCloud' ? session.banWord : undefined}
             />
           </div>
         )}

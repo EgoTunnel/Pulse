@@ -241,6 +241,22 @@ export class LocalServer {
         })
       )
       socket.on(
+        'presenter:removeResponse',
+        safe((payload: unknown) => {
+          const responseId = isPlainObject(payload) ? validId(payload.responseId) : null
+          if (!responseId) return
+          this.withPresenterSession(role, (s) => s.removeResponse(responseId), true)
+        })
+      )
+      socket.on(
+        'presenter:banWord',
+        safe((payload: unknown) => {
+          const word = isPlainObject(payload) ? validId(payload.word) : null
+          if (!word) return
+          this.withPresenterSession(role, (s) => s.banWord(word), true)
+        })
+      )
+      socket.on(
         'presenter:endSession',
         safe(() => {
           if (!this.session || role !== 'presenter') return
