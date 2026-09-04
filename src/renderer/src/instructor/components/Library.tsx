@@ -31,9 +31,10 @@ export function Library(): JSX.Element {
         <div className="flex gap-2">
           <button
             onClick={() => openFromDisk()}
+            title="Bring in a presentation from a USB drive, email attachment, or anywhere else on this computer"
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
           >
-            Open file…
+            Import…
           </button>
           <button
             onClick={() => setCreating(true)}

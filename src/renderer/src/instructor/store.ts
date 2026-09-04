@@ -31,6 +31,7 @@ interface EditorState {
 
   save: () => Promise<void>
   saveAs: () => Promise<void>
+  exportPresentation: () => Promise<string | null>
 
   enterPresent: () => void
   exitPresent: () => void
@@ -183,6 +184,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     } finally {
       set({ saving: false })
     }
+  },
+
+  exportPresentation: async () => {
+    const { presentation } = get()
+    if (!presentation) return null
+    // Deliberately doesn't touch filePath/library — exporting a copy for a
+    // USB drive or email shouldn't redirect where this presentation
+    // autosaves to.
+    return window.pulse.presentation.export(presentation)
   },
 
   enterPresent: () => set({ view: 'present' }),

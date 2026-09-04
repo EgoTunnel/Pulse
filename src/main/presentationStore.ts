@@ -185,18 +185,25 @@ export class PresentationStore {
     return { presentation: updated, filePath }
   }
 
+  /**
+   * "Import" — the picked file is presumed to live somewhere Pulse doesn't
+   * control (a USB drive, a Downloads folder from an email attachment), so
+   * it's copied into Pulse's own presentations folder before being added to
+   * the library. Without this, the library entry would point straight at
+   * the USB drive/Downloads file, and silently vanish from the library the
+   * next time that drive isn't plugged in or that file gets cleaned up.
+   */
   async openFromDisk(): Promise<{ presentation: Presentation; filePath: string } | null> {
     const result = await dialog.showOpenDialog({
-      title: 'Open presentation',
+      title: 'Import presentation',
       properties: ['openFile'],
       filters: [{ name: 'Pulse presentation', extensions: [FILE_EXTENSION, 'json'] }]
     })
     if (result.canceled || result.filePaths.length === 0) return null
-    const filePath = result.filePaths[0]
-    return this.openPath(filePath)
+    return this.openPath(result.filePaths[0], { importCopy: true })
   }
 
-  async openPath(filePath: string): Promise<{ presentation: Presentation; filePath: string }> {
+  async openPath(filePath: string, options: { importCopy?: boolean } = {}): Promise<{ presentation: Presentation; filePath: string }> {
     const raw = await fs.readFile(filePath, 'utf-8')
     let parsed: unknown
     try {
@@ -205,13 +212,22 @@ export class PresentationStore {
       throw new Error("This doesn't look like a Pulse presentation file.")
     }
     const presentation = sanitizePresentation(parsed)
+
+    let finalPath = filePath
+    const alreadyLocal = path.resolve(path.dirname(filePath)) === path.resolve(this.defaultDir)
+    if (options.importCopy && !alreadyLocal) {
+      await fs.mkdir(this.defaultDir, { recursive: true })
+      finalPath = await this.uniqueFilePath(path.join(this.defaultDir, `${sanitizeFileName(presentation.title)}.${FILE_EXTENSION}`))
+      await this.writeFile(finalPath, presentation)
+    }
+
     await this.upsertLibraryEntry({
       id: presentation.id,
       title: presentation.title,
-      filePath,
+      filePath: finalPath,
       updatedAt: presentation.updatedAt
     })
-    return { presentation, filePath }
+    return { presentation, filePath: finalPath }
   }
 
   async openById(id: string): Promise<{ presentation: Presentation; filePath: string } | null> {
@@ -223,6 +239,24 @@ export class PresentationStore {
     } catch {
       return null
     }
+  }
+
+  /**
+   * "Export" — writes a standalone copy wherever the instructor picks (a USB
+   * drive, a folder they're about to email) without touching the library or
+   * the presentation's own saved location, so exporting never redirects
+   * where the instructor's own working copy autosaves to.
+   */
+  async exportTo(presentation: Presentation): Promise<string | null> {
+    const result = await dialog.showSaveDialog({
+      title: 'Export presentation',
+      defaultPath: `${sanitizeFileName(presentation.title)}.${FILE_EXTENSION}`,
+      filters: [{ name: 'Pulse presentation', extensions: [FILE_EXTENSION] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    const filePath = result.filePath.endsWith(`.${FILE_EXTENSION}`) ? result.filePath : `${result.filePath}.${FILE_EXTENSION}`
+    await this.writeFile(filePath, presentation)
+    return filePath
   }
 
   async duplicate(id: string): Promise<{ presentation: Presentation; filePath: string } | null> {

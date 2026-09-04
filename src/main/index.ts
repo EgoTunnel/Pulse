@@ -83,6 +83,7 @@ function registerIpcHandlers(): void {
   )
   ipcMain.handle('pulse:presentation:saveAs', (_e, presentation: Presentation) => store.saveAs(presentation))
   ipcMain.handle('pulse:presentation:duplicate', (_e, id: string) => store.duplicate(id))
+  ipcMain.handle('pulse:presentation:export', (_e, presentation: Presentation) => store.exportTo(presentation))
 
   ipcMain.handle('pulse:session:start', async (_e, presentation: Presentation) => localServer.start(presentation))
   ipcMain.handle('pulse:session:stop', () => localServer.stop())

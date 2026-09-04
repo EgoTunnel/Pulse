@@ -19,7 +19,9 @@ const api = {
     saveAs: (presentation: Presentation): Promise<{ presentation: Presentation; filePath: string } | null> =>
       ipcRenderer.invoke('pulse:presentation:saveAs', presentation),
     duplicate: (id: string): Promise<{ presentation: Presentation; filePath: string } | null> =>
-      ipcRenderer.invoke('pulse:presentation:duplicate', id)
+      ipcRenderer.invoke('pulse:presentation:duplicate', id),
+    export: (presentation: Presentation): Promise<string | null> =>
+      ipcRenderer.invoke('pulse:presentation:export', presentation)
   },
   session: {
     start: (presentation: Presentation): Promise<JoinInfo> => ipcRenderer.invoke('pulse:session:start', presentation),

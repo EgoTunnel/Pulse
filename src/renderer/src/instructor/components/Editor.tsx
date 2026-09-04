@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { SlideThumbnail } from '../../shared/SlideThumbnail'
 import { useEditorStore } from '../store'
 import { SlideList } from './SlideList'
@@ -12,13 +12,26 @@ export function Editor(): JSX.Element | null {
   const backToLibrary = useEditorStore((s) => s.backToLibrary)
   const setTitle = useEditorStore((s) => s.setTitle)
   const save = useEditorStore((s) => s.save)
+  const exportPresentation = useEditorStore((s) => s.exportPresentation)
   const enterPresent = useEditorStore((s) => s.enterPresent)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!dirty) return
     const t = setTimeout(() => save(), 1200)
     return () => clearTimeout(t)
   }, [dirty, save])
+
+  useEffect(() => {
+    if (!exportMessage) return
+    const t = setTimeout(() => setExportMessage(null), 4000)
+    return () => clearTimeout(t)
+  }, [exportMessage])
+
+  async function handleExport(): Promise<void> {
+    const filePath = await exportPresentation()
+    if (filePath) setExportMessage(`Exported to ${filePath}`)
+  }
 
   if (!presentation) return null
   const selectedSlide = presentation.slides.find((s) => s.id === selectedSlideId) ?? presentation.slides[0]
@@ -43,14 +56,29 @@ export function Editor(): JSX.Element | null {
             {saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}
           </span>
         </div>
-        <button
-          onClick={enterPresent}
-          disabled={presentation.slides.length === 0}
-          className="rounded-lg bg-pulse-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pulse-400 disabled:opacity-40"
-        >
-          Present ▸
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
+            title="Save a copy anywhere — a USB drive, a folder to email — without changing where this presentation autosaves"
+          >
+            Export…
+          </button>
+          <button
+            onClick={enterPresent}
+            disabled={presentation.slides.length === 0}
+            className="rounded-lg bg-pulse-500 px-4 py-2 text-sm font-semibold text-white hover:bg-pulse-400 disabled:opacity-40"
+          >
+            Present ▸
+          </button>
+        </div>
       </header>
+
+      {exportMessage && (
+        <p role="status" aria-live="polite" className="border-b border-emerald-900 bg-emerald-950/50 px-4 py-2 text-xs text-emerald-300">
+          ✓ {exportMessage}
+        </p>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div className="w-56 shrink-0 border-r border-slate-800" aria-label="Slides" role="region">
