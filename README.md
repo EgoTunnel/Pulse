@@ -1,6 +1,6 @@
 # Pulse
 
-Pulse is a free, open-source, local-first interactive presentation tool for post-secondary educators — a simple alternative to tools like Mentimeter. Instructors build a presentation of ordinary slides and interactive questions, present it from their own computer, and students join from their phones or laptops over the local network. No student accounts, no cloud service, no persistent student data.
+Pulse is a free, open-source, local-first interactive presentation tool for post-secondary educators. It's a a simple alternative to tools like Mentimeter. Instructors build a presentation of ordinary slides and interactive questions, present it from their own computer, and students join from their phones or laptops over the local network. There are no student accounts, no cloud service, and no persistent student data.
 
 See [`Vision Document.txt`](./Vision%20Document.txt) for the full product vision and functional spec this app is built against.
 
