@@ -3,6 +3,9 @@ import type { LibraryEntry, Presentation, UpdaterStatus } from '@shared/types'
 import type { JoinInfo } from '../main/server'
 
 const api = {
+  app: {
+    isPortable: (): Promise<boolean> => ipcRenderer.invoke('pulse:app:isPortable')
+  },
   library: {
     list: (): Promise<LibraryEntry[]> => ipcRenderer.invoke('pulse:library:list'),
     remove: (id: string): Promise<void> => ipcRenderer.invoke('pulse:library:remove', id)

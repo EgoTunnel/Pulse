@@ -1,6 +1,7 @@
 import { app, type BrowserWindow } from 'electron'
 import electronUpdaterPkg from 'electron-updater'
 import type { UpdaterStatus } from '@shared/types'
+import { isPortable } from './portable'
 
 // electron-updater is CommonJS and doesn't declare proper ESM named exports —
 // `import { autoUpdater } from 'electron-updater'` typechecks (its .d.ts
@@ -22,7 +23,10 @@ const RECHECK_INTERVAL_MS = 4 * 60 * 60 * 1000 // 4 hours
  *
  * Only meaningful in a packaged build: there's no publish metadata to check
  * against in dev, and unsigned macOS builds can't self-update at all (see
- * README) — both cases just log and stay quiet.
+ * README) — both cases just log and stay quiet. Also disabled entirely for
+ * a portable build: quietly rewriting the executable on a USB drive that
+ * might be write-protected, slow, or shared across several computers is a
+ * bad default — portable users redownload manually instead.
  */
 export class Updater {
   private mainWindow: BrowserWindow
@@ -58,13 +62,13 @@ export class Updater {
   }
 
   start(): void {
-    if (!app.isPackaged) return
+    if (!app.isPackaged || isPortable()) return
     this.check()
     setInterval(() => this.check(), RECHECK_INTERVAL_MS)
   }
 
   check(): void {
-    if (!app.isPackaged) return
+    if (!app.isPackaged || isPortable()) return
     autoUpdater.checkForUpdates().catch((err) => console.error('[pulse] update check failed:', err))
   }
 

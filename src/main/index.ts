@@ -4,6 +4,7 @@ import type { Presentation } from '@shared/types'
 import { PresentationStore } from './presentationStore'
 import { LocalServer } from './server'
 import { Updater } from './updater'
+import { isPortable } from './portable'
 
 // Last-resort safety net. The socket server and file-open paths validate
 // their own untrusted input (see server.ts / validate.ts / presentationStore.ts)
@@ -72,6 +73,8 @@ function createWindow(): void {
 }
 
 function registerIpcHandlers(): void {
+  ipcMain.handle('pulse:app:isPortable', () => isPortable())
+
   ipcMain.handle('pulse:library:list', () => store.listLibrary())
   ipcMain.handle('pulse:library:remove', (_e, id: string) => store.removeFromLibrary(id))
 

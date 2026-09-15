@@ -13,10 +13,15 @@ export function Library(): JSX.Element {
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [testingConnection, setTestingConnection] = useState(false)
+  const [portable, setPortable] = useState(false)
 
   useEffect(() => {
     refreshLibrary()
   }, [refreshLibrary])
+
+  useEffect(() => {
+    window.pulse.app.isPortable().then(setPortable)
+  }, [])
 
   return (
     <div className="mx-auto flex h-full max-w-5xl flex-col px-8 py-10">
@@ -26,8 +31,20 @@ export function Library(): JSX.Element {
             P
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-white">Pulse</h1>
-            <p className="text-sm text-slate-400">Your classroom. Your data.</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-white">Pulse</h1>
+              {portable && (
+                <span
+                  title="Running from this drive — your library and presentations are stored here too, not on this computer"
+                  className="rounded-full bg-pulse-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-pulse-300"
+                >
+                  Portable
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-400">
+              {portable ? 'Your classroom. Your data. Right here on this drive.' : 'Your classroom. Your data.'}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">

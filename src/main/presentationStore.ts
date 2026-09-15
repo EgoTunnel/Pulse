@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { LibraryEntry, Presentation, Slide } from '@shared/types'
 import { CONTENT_SLIDE_TYPES, INTERACTIVE_SLIDE_TYPES } from '@shared/types'
 import { makeId } from '@shared/id'
+import { getPortableDataDir } from './portable'
 
 const FILE_EXTENSION = 'pulse.json'
 const KNOWN_SLIDE_TYPES = new Set<string>([...CONTENT_SLIDE_TYPES, ...INTERACTIVE_SLIDE_TYPES])
@@ -64,9 +65,18 @@ export class PresentationStore {
   private loaded = false
 
   constructor() {
-    const userData = app.getPath('userData')
-    this.libraryPath = path.join(userData, 'library.json')
-    this.defaultDir = path.join(app.getPath('documents'), 'Pulse Presentations')
+    const portableDir = getPortableDataDir()
+    if (portableDir) {
+      // Portable build: keep everything on the drive the app itself runs
+      // from, so unplugging it and moving to another computer brings the
+      // whole library along — not just the app.
+      this.libraryPath = path.join(portableDir, 'library.json')
+      this.defaultDir = path.join(portableDir, 'Presentations')
+    } else {
+      const userData = app.getPath('userData')
+      this.libraryPath = path.join(userData, 'library.json')
+      this.defaultDir = path.join(app.getPath('documents'), 'Pulse Presentations')
+    }
   }
 
   private async ensureLoaded(): Promise<void> {
