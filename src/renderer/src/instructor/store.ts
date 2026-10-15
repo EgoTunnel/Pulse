@@ -3,7 +3,7 @@ import type { LibraryEntry, Presentation, Slide, SlideType } from '@shared/types
 import type { PresentationTheme } from '@shared/theme'
 import { createSlide } from '@shared/slideFactory'
 
-export type EditorView = 'library' | 'editor' | 'present'
+export type EditorView = 'library' | 'editor' | 'present' | 'results'
 
 interface EditorState {
   view: EditorView
@@ -14,6 +14,11 @@ interface EditorState {
   saving: boolean
   selectedSlideId: string | null
   openError: string | null
+  /** One-shot message shown on the next screen, e.g. "Results saved" after ending a session. */
+  notice: string | null
+  setNotice: (notice: string | null) => void
+  openResults: () => void
+  closeResults: () => void
 
   refreshLibrary: () => Promise<void>
   createPresentation: (title: string) => Promise<void>
@@ -48,6 +53,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   saving: false,
   selectedSlideId: null,
   openError: null,
+  notice: null,
+  setNotice: (notice) => set({ notice }),
+  openResults: () => set({ view: 'results' }),
+  closeResults: () => set({ view: 'editor' }),
 
   refreshLibrary: async () => {
     const library = await window.pulse.library.list()

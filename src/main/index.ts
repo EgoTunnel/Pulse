@@ -5,6 +5,7 @@ import { PresentationStore } from './presentationStore'
 import { LocalServer } from './server'
 import { Updater } from './updater'
 import { isPortable } from './portable'
+import { ResultsStore } from './resultsStore'
 
 // Last-resort safety net. The socket server and file-open paths validate
 // their own untrusted input (see server.ts / validate.ts / presentationStore.ts)
@@ -19,6 +20,7 @@ process.on('unhandledRejection', (reason) => {
 })
 
 const store = new PresentationStore()
+const resultsStore = new ResultsStore(store.resultsDir)
 const localServer = new LocalServer()
 
 let mainWindow: BrowserWindow | null = null
@@ -91,6 +93,18 @@ function registerIpcHandlers(): void {
   ipcMain.handle('pulse:session:start', async (_e, presentation: Presentation) => localServer.start(presentation))
   ipcMain.handle('pulse:session:stop', () => localServer.stop())
   ipcMain.handle('pulse:session:status', () => localServer.getCurrentJoinInfo())
+
+  // Saving is always an explicit instructor choice at the end of a session.
+  ipcMain.handle('pulse:results:saveCurrent', async () => {
+    const snapshot = localServer.snapshotResults()
+    return snapshot ? resultsStore.save(snapshot) : null
+  })
+  ipcMain.handle('pulse:results:list', (_e, presentationId?: string) =>
+    resultsStore.list(typeof presentationId === 'string' ? presentationId : undefined)
+  )
+  ipcMain.handle('pulse:results:read', (_e, id: string) => resultsStore.read(String(id)))
+  ipcMain.handle('pulse:results:delete', (_e, id: string) => resultsStore.remove(String(id)))
+  ipcMain.handle('pulse:results:exportCsv', (_e, id: string) => resultsStore.exportCsv(String(id)))
 
   ipcMain.handle('pulse:updater:status', () => updater?.getStatus() ?? { state: 'idle' })
   ipcMain.handle('pulse:updater:check', () => updater?.check())

@@ -15,6 +15,9 @@ export function Editor(): JSX.Element | null {
   const save = useEditorStore((s) => s.save)
   const exportPresentation = useEditorStore((s) => s.exportPresentation)
   const enterPresent = useEditorStore((s) => s.enterPresent)
+  const openResults = useEditorStore((s) => s.openResults)
+  const notice = useEditorStore((s) => s.notice)
+  const setNotice = useEditorStore((s) => s.setNotice)
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [panel, setPanel] = useState<'slide' | 'design'>('slide')
 
@@ -64,6 +67,13 @@ export function Editor(): JSX.Element | null {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={openResults}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
+            title="Review or export results you chose to save from past sessions"
+          >
+            Past results
+          </button>
+          <button
             onClick={handleExport}
             className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800"
             title="Save a copy anywhere — a USB drive, a folder to email — without changing where this presentation autosaves"
@@ -79,6 +89,15 @@ export function Editor(): JSX.Element | null {
           </button>
         </div>
       </header>
+
+      {notice && (
+        <div role="status" className="flex items-center justify-between border-b border-pulse-800 bg-pulse-900/40 px-4 py-2 text-xs text-pulse-200">
+          <span>{notice}</span>
+          <button onClick={() => setNotice(null)} className="ml-4 text-pulse-300 hover:text-white" aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
 
       {exportMessage && (
         <p role="status" aria-live="polite" className="border-b border-emerald-900 bg-emerald-950/50 px-4 py-2 text-xs text-emerald-300">

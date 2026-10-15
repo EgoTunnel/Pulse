@@ -16,6 +16,7 @@ import type {
 } from '@shared/types'
 import { hasCompetition, isInteractiveSlide, isScoredSlide, toPublicSlide } from '@shared/types'
 import { MAX_NICKNAME_LENGTH, randomNickname } from '@shared/nicknames'
+import type { SavedSession, SavedSlideResult } from '@shared/results'
 import { validateResponseValue } from './validate'
 import { isProfane } from './moderation'
 
@@ -406,6 +407,44 @@ export class SessionManager {
     return { startedAt: this.startedAt, peakParticipants: this.peakParticipants, playerCount: this.nicknames.size }
   }
 
+  /**
+   * The aggregate, anonymous record an instructor can choose to keep when
+   * ending a session. Null if nothing was answered. Must be called before
+   * end(), which discards everything.
+   */
+  toSavedSession(): SavedSession | null {
+    const slides: SavedSlideResult[] = []
+    for (const slide of this.presentation.slides) {
+      if (!isInteractiveSlide(slide)) continue
+      const snapshot = this.getResultsFor(slide.id)
+      if (!snapshot || snapshot.responseCount === 0) continue
+      const clean = { ...slide } as Record<string, unknown>
+      delete clean.notes
+      delete clean.style
+      slides.push({
+        slideId: slide.id,
+        slideType: slide.type,
+        slide: clean as unknown as Slide,
+        responseCount: snapshot.responseCount,
+        data: anonymize(snapshot.data),
+        scored: isScoredSlide(slide) ? (this.getScoredStats(slide.id) ?? undefined) : undefined
+      })
+    }
+    if (slides.length === 0) return null
+    return {
+      kind: 'pulse-results',
+      version: 1,
+      id: randomUUID(),
+      presentationId: this.presentation.id,
+      presentationTitle: this.presentation.title,
+      startedAt: this.startedAt,
+      endedAt: new Date().toISOString(),
+      peakParticipants: this.peakParticipants,
+      playerCount: this.competition ? this.nicknames.size : undefined,
+      slides
+    }
+  }
+
   /** Per-question accuracy for a saved results record — aggregate only. */
   getScoredStats(slideId: string): { answered: number; correct: number } | null {
     const slideScores = this.scores.get(slideId)
@@ -414,6 +453,12 @@ export class SessionManager {
     for (const r of slideScores.values()) if (r.correct) correct += 1
     return { answered: slideScores.size, correct }
   }
+}
+
+/** Free-text entries carry the participant id they were stored under (for the presenter's remove button); a saved record has no use for it. */
+function anonymize(data: ResultsData): ResultsData {
+  if (data.kind === 'text') return { kind: 'text', entries: data.entries.map((e, i) => ({ id: String(i), text: e.text })) }
+  return data
 }
 
 function isCorrect(slide: ScorableSlide, value: ResponseValue): boolean {

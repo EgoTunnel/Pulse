@@ -112,6 +112,11 @@ export class PresentationStore {
     }
   }
 
+  /** Saved session results live next to the presentations — on the drive itself in portable mode. */
+  get resultsDir(): string {
+    return path.join(this.defaultDir, 'Results')
+  }
+
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) return
     try {

@@ -188,7 +188,12 @@ function LabeledBars({
             </div>
             <div className="h-4 w-full overflow-hidden rounded-full bg-slide-fg/10">
               <div
-                className={`h-full rounded-full ${isCorrect ? 'bg-emerald-500' : BAR_COLORS[i % BAR_COLORS.length]} transition-all duration-500`}
+                // With an answer key, only the correct bar is colored — a wrong
+                // option that happens to draw green from the palette would read
+                // as "correct" from the back of the room.
+                className={`h-full rounded-full ${
+                  isCorrect ? 'bg-emerald-500' : highlight ? 'bg-slide-fg/30' : BAR_COLORS[i % BAR_COLORS.length]
+                } transition-all duration-500`}
                 style={{ width: `${(count / max) * 100}%` }}
               />
             </div>

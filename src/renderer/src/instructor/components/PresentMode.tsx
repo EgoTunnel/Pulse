@@ -23,6 +23,9 @@ export function PresentMode(): JSX.Element | null {
   const index = nav.index
   const [showJoinPanel, setShowJoinPanel] = useState(true)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [endError, setEndError] = useState<string | null>(null)
+  const setNotice = useEditorStore((s) => s.setNotice)
   const [showTroubleshooting, setShowTroubleshooting] = useState(false)
   const cancelEndRef = useRef<HTMLButtonElement>(null)
   const closeTroubleshootingRef = useRef<HTMLButtonElement>(null)
@@ -59,7 +62,8 @@ export function PresentMode(): JSX.Element | null {
       if (e.key === 'Escape') {
         if (confirmEnd) setConfirmEnd(false)
         else if (showTroubleshooting) setShowTroubleshooting(false)
-        else exitPresent()
+        else if (showLeaderboard) setShowLeaderboard(false)
+        else setConfirmEnd(true)
         return
       }
       if (confirmEnd || showTroubleshooting) return
@@ -83,7 +87,26 @@ export function PresentMode(): JSX.Element | null {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [nav, slide, exitPresent, confirmEnd, showTroubleshooting])
+  }, [nav, slide, confirmEnd, showTroubleshooting, showLeaderboard])
+
+  async function finish(save: boolean): Promise<void> {
+    setEndError(null)
+    if (save) {
+      setSaving(true)
+      try {
+        // Must happen before endSession — ending discards everything server-side.
+        const saved = await window.pulse.results.saveCurrent()
+        setNotice(saved ? 'Results saved. Open Past results any time to review or export them.' : 'Nothing was answered this session, so there were no results to save.')
+      } catch {
+        setSaving(false)
+        setEndError("Couldn't save the results. You can try again, or end without saving.")
+        return
+      }
+      setSaving(false)
+    }
+    session.endSession()
+    exitPresent()
+  }
 
   if (!presentation || !slide) return null
 
@@ -174,7 +197,9 @@ export function PresentMode(): JSX.Element | null {
         showLeaderboard={session.state?.competition ? showLeaderboard : undefined}
         onToggleLeaderboard={() => setShowLeaderboard((v) => !v)}
         onEnd={() => setConfirmEnd(true)}
-        onExit={exitPresent}
+        // Leaving Present Mode ends the session, so it goes through the same
+        // save-or-discard choice — no silently losing a class's results.
+        onExit={() => setConfirmEnd(true)}
       />
 
       {confirmEnd && (
@@ -184,15 +209,22 @@ export function PresentMode(): JSX.Element | null {
             aria-modal="true"
             aria-labelledby="end-session-title"
             aria-describedby="end-session-description"
-            className="w-96 rounded-xl border border-slate-700 bg-slate-900 p-6 text-center"
+            className="w-[28rem] max-w-full rounded-xl border border-slate-700 bg-slate-900 p-6 text-center"
           >
             <p id="end-session-title" className="mb-1 text-lg font-semibold text-white">
               End this session?
             </p>
             <p id="end-session-description" className="mb-5 text-sm text-slate-400">
-              Students will be disconnected and all participation for this session will be discarded.
+              Students will be disconnected. You can keep a copy of the results to review later — only totals and
+              anonymous answers are saved, never who answered what{session.state?.competition ? ' or leaderboard nicknames' : ''}.
+              Otherwise everything from this session is discarded.
             </p>
-            <div className="flex justify-center gap-3">
+            {endError && (
+              <p role="alert" className="mb-4 text-sm text-red-300">
+                {endError}
+              </p>
+            )}
+            <div className="flex flex-wrap justify-center gap-3">
               <button
                 ref={cancelEndRef}
                 onClick={() => setConfirmEnd(false)}
@@ -201,13 +233,18 @@ export function PresentMode(): JSX.Element | null {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  session.endSession()
-                  exitPresent()
-                }}
-                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white"
+                disabled={saving}
+                onClick={() => finish(false)}
+                className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 disabled:opacity-50"
               >
-                End session
+                End without saving
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => finish(true)}
+                className="rounded-lg bg-pulse-500 px-4 py-2 text-sm font-medium text-white hover:bg-pulse-400 disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : 'End & save results'}
               </button>
             </div>
           </div>

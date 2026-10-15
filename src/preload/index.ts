@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { LibraryEntry, Presentation, UpdaterStatus } from '@shared/types'
+import type { SavedSession, SavedSessionSummary } from '@shared/results'
 import type { JoinInfo } from '../main/server'
 
 const api = {
@@ -30,6 +31,14 @@ const api = {
     start: (presentation: Presentation): Promise<JoinInfo> => ipcRenderer.invoke('pulse:session:start', presentation),
     stop: (): Promise<void> => ipcRenderer.invoke('pulse:session:stop'),
     status: (): Promise<JoinInfo | null> => ipcRenderer.invoke('pulse:session:status')
+  },
+  results: {
+    /** Saves the live session's aggregate results; null if nothing was answered. */
+    saveCurrent: (): Promise<SavedSessionSummary | null> => ipcRenderer.invoke('pulse:results:saveCurrent'),
+    list: (presentationId?: string): Promise<SavedSessionSummary[]> => ipcRenderer.invoke('pulse:results:list', presentationId),
+    read: (id: string): Promise<SavedSession | null> => ipcRenderer.invoke('pulse:results:read', id),
+    remove: (id: string): Promise<void> => ipcRenderer.invoke('pulse:results:delete', id),
+    exportCsv: (id: string): Promise<string | null> => ipcRenderer.invoke('pulse:results:exportCsv', id)
   },
   updater: {
     status: (): Promise<UpdaterStatus> => ipcRenderer.invoke('pulse:updater:status'),

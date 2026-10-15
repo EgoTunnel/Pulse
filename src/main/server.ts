@@ -13,6 +13,7 @@ import type {
   SessionStateMessage
 } from '@shared/types'
 import { normalizeRoomCode } from '@shared/id'
+import type { SavedSession } from '@shared/results'
 import { LOCAL_SERVER_PORT } from '@shared/config'
 import { getLocalNetworkAddress } from './network'
 import { SessionManager } from './sessionManager'
@@ -462,6 +463,11 @@ export class LocalServer {
 
   hasActiveSession(): boolean {
     return this.session !== null
+  }
+
+  /** The current session's aggregate results, for an instructor who chooses to save them — call before the session ends. */
+  snapshotResults(): SavedSession | null {
+    return this.session?.toSavedSession() ?? null
   }
 
   stop(): void {
