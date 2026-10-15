@@ -41,7 +41,10 @@ export function AddSlideMenu({ afterId = null, label = '+ Add slide', fullWidth 
   function pickTemplate(templateId: string): void {
     const template = SLIDE_TEMPLATES.find((t) => t.id === templateId)
     if (!template) return
-    const patch = (template.type === 'likert' ? { statement: template.example } : { question: template.example }) as Partial<Slide>
+    const patch = {
+      ...(template.type === 'likert' ? { statement: template.example } : { question: template.example }),
+      ...template.extra
+    } as Partial<Slide>
     addSlide(template.type, afterId, patch)
     setOpen(false)
   }

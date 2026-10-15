@@ -19,6 +19,7 @@ export const CONTENT_SLIDE_META: SlideTypeMeta[] = [
   { type: 'statement', label: 'Big Number', description: 'One striking stat or phrase', glyph: '%' },
   { type: 'code', label: 'Code', description: 'A monospaced code snippet', glyph: '</>' },
   { type: 'timer', label: 'Activity Timer', description: 'A countdown for discussion or work', glyph: '⏱' },
+  { type: 'leaderboard', label: 'Leaderboard', description: 'Live competition rankings', glyph: '🏆' },
   { type: 'blank', label: 'Blank', description: 'Start from scratch', glyph: '▢' }
 ]
 
@@ -50,11 +51,20 @@ export interface SlideTemplate {
   name: string
   example: string
   type: SlideType
+  /** Extra fields applied on top of the type's defaults. */
+  extra?: Record<string, unknown>
 }
 
 /** Named templates from the vision doc's "Interactive Slide Templates" section — shortcuts that pre-fill a question. */
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
   { id: 'quick-poll', name: 'Quick Poll', example: 'What do you think?', type: 'poll' },
+  {
+    id: 'quiz-question',
+    name: 'Quiz Question',
+    example: 'Which answer is correct?',
+    type: 'multipleChoice',
+    extra: { scored: true, timeLimitSeconds: 20 }
+  },
   { id: 'knowledge-check', name: 'Knowledge Check', example: 'Which answer is correct?', type: 'multipleChoice' },
   { id: 'prediction', name: 'Prediction', example: 'What do you think will happen?', type: 'numeric' },
   { id: 'opinion', name: 'Opinion', example: 'How strongly do you agree?', type: 'likert' },

@@ -1,6 +1,7 @@
-import type { Slide } from '@shared/types'
-import { isInteractiveSlide } from '@shared/types'
+import type { LeaderboardMessage, Slide } from '@shared/types'
+import { isInteractiveSlide, isScoredSlide } from '@shared/types'
 import { fontStack } from '@shared/theme'
+import { LeaderboardView } from './LeaderboardView'
 
 interface Props {
   slide: Slide
@@ -8,6 +9,8 @@ interface Props {
   visibleBullets?: number
   /** Present mode only: live seconds remaining on an activity-timer slide. */
   timerRemaining?: number
+  /** Present mode only: live standings for a leaderboard slide (the editor shows a sample). */
+  leaderboard?: LeaderboardMessage | null
 }
 
 /** The editor stores bullet text line-by-line as typed; blank lines aren't bullets. */
@@ -26,14 +29,17 @@ export function formatDuration(totalSeconds: number): string {
  * inside an element styled with themeStyleVars() (see SlideThumbnail /
  * PresentMode).
  */
-export function SlideStatic({ slide, visibleBullets, timerRemaining }: Props): JSX.Element {
+export function SlideStatic({ slide, visibleBullets, timerRemaining, leaderboard }: Props): JSX.Element {
   const left = slide.style?.align === 'left'
   const alignClass = left ? 'items-start text-left' : 'items-center text-center'
 
   if (isInteractiveSlide(slide)) {
     return (
       <div className={`flex h-full w-full flex-col justify-center gap-4 px-16 text-slide-fg ${alignClass}`}>
-        <span className="slide-small font-semibold uppercase tracking-widest text-slide-accent">{questionKindLabel(slide.type)}</span>
+        <span className="slide-small font-semibold uppercase tracking-widest text-slide-accent">
+          {questionKindLabel(slide.type)}
+          {isScoredSlide(slide) && ' · Scored'}
+        </span>
         <h2 className="slide-h2 max-w-4xl">{questionText(slide)}</h2>
       </div>
     )
@@ -176,6 +182,8 @@ export function SlideStatic({ slide, visibleBullets, timerRemaining }: Props): J
           </pre>
         </div>
       )
+    case 'leaderboard':
+      return <LeaderboardView heading={slide.heading} data={leaderboard} />
     case 'timer': {
       const remaining = timerRemaining ?? slide.durationSeconds
       const done = timerRemaining !== undefined && timerRemaining <= 0

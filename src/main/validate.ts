@@ -38,6 +38,11 @@ export function validId(v: unknown): string | null {
   return isBoundedString(v, MAX_ID_LENGTH) ? v : null
 }
 
+/** Client-generated participant ids: 16–64 URL-safe characters (the student page sends 32 hex chars). */
+export function validParticipantId(v: unknown): string | null {
+  return typeof v === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(v) ? v : null
+}
+
 function isFiniteNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v)
 }

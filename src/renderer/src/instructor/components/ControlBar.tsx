@@ -13,6 +13,9 @@ interface Props {
   onToggleTimer: () => void
   onRestartTimer: () => void
   showJoinPanel: boolean
+  /** Defined only when the presentation has a competition. */
+  showLeaderboard?: boolean
+  onToggleLeaderboard: () => void
   onPrev: () => void
   onNext: () => void
   onToggleOpen: () => void
@@ -34,6 +37,8 @@ export function ControlBar({
   onToggleTimer,
   onRestartTimer,
   showJoinPanel,
+  showLeaderboard,
+  onToggleLeaderboard,
   onPrev,
   onNext,
   onToggleOpen,
@@ -59,6 +64,17 @@ export function ControlBar({
         >
           {state?.roomCode ?? '···'} · {state?.participantCount ?? 0} connected
         </button>
+        {showLeaderboard !== undefined && (
+          <button
+            onClick={onToggleLeaderboard}
+            aria-pressed={showLeaderboard}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              showLeaderboard ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <span aria-hidden="true">🏆</span> Leaderboard
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

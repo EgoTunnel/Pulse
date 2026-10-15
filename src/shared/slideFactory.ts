@@ -41,6 +41,8 @@ export function createSlide(type: SlideType): Slide {
       return { id, type, heading: 'Example', code: 'def greet(name):\n    return f"Hello, {name}!"', language: 'Python' }
     case 'timer':
       return { id, type, heading: 'Discuss with the people around you', body: '', durationSeconds: 180 }
+    case 'leaderboard':
+      return { id, type, heading: 'Leaderboard' }
     case 'multipleChoice':
       return {
         id,

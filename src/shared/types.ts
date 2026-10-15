@@ -20,6 +20,7 @@ export type ContentSlideType =
   | 'statement'
   | 'code'
   | 'timer'
+  | 'leaderboard'
 
 export type InteractiveSlideType =
   | 'multipleChoice'
@@ -49,7 +50,8 @@ export const CONTENT_SLIDE_TYPES: ContentSlideType[] = [
   'twoColumn',
   'statement',
   'code',
-  'timer'
+  'timer',
+  'leaderboard'
 ]
 
 export const INTERACTIVE_SLIDE_TYPES: InteractiveSlideType[] = [
@@ -69,6 +71,25 @@ export const INTERACTIVE_SLIDE_TYPES: InteractiveSlideType[] = [
 
 export function isInteractiveSlide(slide: Slide): slide is Extract<Slide, { type: InteractiveSlideType }> {
   return (INTERACTIVE_SLIDE_TYPES as string[]).includes(slide.type)
+}
+
+export type ScorableSlide = MultipleChoiceSlide | MultipleSelectSlide | TrueFalseSlide
+
+/** Question types that can have a single right answer, and so can be part of a competition. */
+export function canBeScored(slide: Slide): slide is ScorableSlide {
+  return slide.type === 'multipleChoice' || slide.type === 'multipleSelect' || slide.type === 'trueFalse'
+}
+
+/** Marked as scored AND has a correct answer set — a scored question with no answer key can't award points. */
+export function isScoredSlide(slide: Slide): slide is ScorableSlide {
+  if (!canBeScored(slide) || !slide.scored) return false
+  if (slide.type === 'multipleChoice') return !!slide.correctOptionId
+  if (slide.type === 'multipleSelect') return !!slide.correctOptionIds && slide.correctOptionIds.length > 0
+  return slide.correctAnswer !== undefined
+}
+
+export function hasCompetition(presentation: { slides: Slide[] }): boolean {
+  return presentation.slides.some(isScoredSlide)
 }
 
 interface SlideBase {
@@ -170,37 +191,53 @@ export interface TimerSlide extends SlideBase {
   durationSeconds: number
 }
 
+/** Ranks the competition so far, live — usually dropped in every few quiz questions. */
+export interface LeaderboardSlide extends SlideBase {
+  type: 'leaderboard'
+  heading: string
+}
+
 // --- Interactive slides ------------------------------------------------------
+
+interface QuestionBase extends SlideBase {
+  /** Responses close automatically after this many seconds. Also drives the speed bonus on scored questions. */
+  timeLimitSeconds?: number
+}
 
 export interface ChoiceOption {
   id: string
   label: string
 }
 
-export interface MultipleChoiceSlide extends SlideBase {
+export interface MultipleChoiceSlide extends QuestionBase {
   type: 'multipleChoice'
   question: string
   options: ChoiceOption[]
   correctOptionId?: string
   revealPolicy: RevealPolicy
+  /** Counts toward the competition leaderboard (needs a correct answer). */
+  scored?: boolean
 }
 
-export interface MultipleSelectSlide extends SlideBase {
+export interface MultipleSelectSlide extends QuestionBase {
   type: 'multipleSelect'
   question: string
   options: ChoiceOption[]
   correctOptionIds?: string[]
   revealPolicy: RevealPolicy
+  /** Counts toward the leaderboard; only an exact match of the correct set scores. */
+  scored?: boolean
 }
 
-export interface TrueFalseSlide extends SlideBase {
+export interface TrueFalseSlide extends QuestionBase {
   type: 'trueFalse'
   question: string
   correctAnswer?: boolean
   revealPolicy: RevealPolicy
+  scored?: boolean
 }
 
-export interface RatingSlide extends SlideBase {
+export interface RatingSlide extends QuestionBase {
   type: 'rating'
   question: string
   min: number
@@ -210,7 +247,7 @@ export interface RatingSlide extends SlideBase {
   revealPolicy: RevealPolicy
 }
 
-export interface LikertSlide extends SlideBase {
+export interface LikertSlide extends QuestionBase {
   type: 'likert'
   statement: string
   revealPolicy: RevealPolicy
@@ -224,45 +261,45 @@ export const LIKERT_LEVELS = [
   'Strongly agree'
 ] as const
 
-export interface WordCloudSlide extends SlideBase {
+export interface WordCloudSlide extends QuestionBase {
   type: 'wordCloud'
   question: string
   maxWordsPerStudent: number
   revealPolicy: RevealPolicy
 }
 
-export interface ShortAnswerSlide extends SlideBase {
+export interface ShortAnswerSlide extends QuestionBase {
   type: 'shortAnswer'
   question: string
   revealPolicy: RevealPolicy
 }
 
-export interface OpenResponseSlide extends SlideBase {
+export interface OpenResponseSlide extends QuestionBase {
   type: 'openResponse'
   question: string
   revealPolicy: RevealPolicy
 }
 
-export interface RankingSlide extends SlideBase {
+export interface RankingSlide extends QuestionBase {
   type: 'ranking'
   question: string
   options: ChoiceOption[]
   revealPolicy: RevealPolicy
 }
 
-export interface NumericSlide extends SlideBase {
+export interface NumericSlide extends QuestionBase {
   type: 'numeric'
   question: string
   unit?: string
   revealPolicy: RevealPolicy
 }
 
-export interface QnaSlide extends SlideBase {
+export interface QnaSlide extends QuestionBase {
   type: 'qna'
   prompt?: string
 }
 
-export interface PollSlide extends SlideBase {
+export interface PollSlide extends QuestionBase {
   type: 'poll'
   question: string
   options: ChoiceOption[]
@@ -285,6 +322,7 @@ export type Slide =
   | StatementSlide
   | CodeSlide
   | TimerSlide
+  | LeaderboardSlide
   | MultipleChoiceSlide
   | MultipleSelectSlide
   | TrueFalseSlide
@@ -333,6 +371,43 @@ export interface SessionStateMessage {
   resultsRevealed: boolean
   participantCount: number
   responseCount: number
+  /** The presentation has scored questions, so players have leaderboard nicknames. */
+  competition: boolean
+  /** The current slide is a scored question — answers lock on first submit. */
+  scored: boolean
+  /**
+   * Milliseconds until responses auto-close, measured when this message was
+   * built. Sent as a duration, not a timestamp, because students' phone
+   * clocks can disagree with the instructor's laptop by seconds.
+   */
+  responsesCloseInMs: number | null
+}
+
+export interface LeaderboardEntry {
+  nickname: string
+  score: number
+  /** 1-based; tied scores share a rank. */
+  rank: number
+}
+
+export interface LeaderboardMessage {
+  top: LeaderboardEntry[]
+  playerCount: number
+}
+
+/** Sent privately to one student — their own standing, never anyone else's. */
+export interface StandingMessage {
+  nickname: string
+  score: number
+  rank: number
+  playerCount: number
+}
+
+/** Sent privately to one student when a scored question's answer is revealed. */
+export interface FeedbackMessage {
+  slideId: string
+  correct: boolean
+  points: number
 }
 
 /** A slide as seen by students: no speaker notes, no correct-answer markers. */
@@ -410,8 +485,12 @@ export interface ServerToClientEvents {
   'session:state': (state: SessionStateMessage) => void
   'session:results': (snapshot: ResultsSnapshot) => void
   'session:connectivity': (signal: ConnectivitySignal) => void
+  /** Presenter-only. */
+  'session:leaderboard': (leaderboard: LeaderboardMessage) => void
   'session:ended': () => void
   'presenter:error': (message: string) => void
+  'student:standing': (standing: StandingMessage) => void
+  'student:feedback': (feedback: FeedbackMessage) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -429,8 +508,18 @@ export type UpdaterStatus =
 /** Events clients emit to the server. */
 export interface ClientToServerEvents {
   'student:join': (
-    payload: { roomCode: string },
+    /**
+     * participantId is random, generated by the student's browser tab and kept
+     * in sessionStorage, so a dropped Wi-Fi connection rejoins as the same
+     * player (keeping their score and one-vote-per-question) rather than a new
+     * one. It's never shown to anyone and dies with the tab.
+     */
+    payload: { roomCode: string; participantId: string },
     ack: (result: { ok: true; state: SessionStateMessage } | { ok: false; error: string }) => void
+  ) => void
+  'student:setNickname': (
+    payload: { nickname: string },
+    ack: (result: { ok: true; nickname: string } | { ok: false; error: string }) => void
   ) => void
   'student:respond': (
     payload: { slideId: string; value: ResponseValue },

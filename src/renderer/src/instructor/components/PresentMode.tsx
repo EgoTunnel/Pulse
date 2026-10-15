@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { isInteractiveSlide } from '@shared/types'
 import { SlideStatic } from '../../shared/SlideStatic'
 import { ResultsView } from '../../shared/ResultsView'
+import { LeaderboardView } from '../../shared/LeaderboardView'
+import { useCountdown } from '../../shared/useCountdown'
 import { resolveTheme, themeStyleVars } from '@shared/theme'
 import { useEditorStore } from '../store'
 import { usePresenterSession } from '../usePresenterSession'
@@ -26,6 +28,8 @@ export function PresentMode(): JSX.Element | null {
   const closeTroubleshootingRef = useRef<HTMLButtonElement>(null)
 
   const session = usePresenterSession(presentation!)
+  const countdown = useCountdown(session.state?.responsesCloseInMs, session.state)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
 
   useEffect(() => {
     if (!session.joinInfo) return
@@ -84,6 +88,7 @@ export function PresentMode(): JSX.Element | null {
   if (!presentation || !slide) return null
 
   const stageStyle = themeStyleVars(resolveTheme(presentation.theme, slide.style)) as React.CSSProperties
+  const questionSecondsLeft = session.state?.responsesOpen ? countdown : null
 
   const interactive = isInteractiveSlide(slide)
   const showResults = interactive && session.results && session.results.slideId === slide.id && (session.state?.responseCount ?? 0) >= 0
@@ -93,6 +98,24 @@ export function PresentMode(): JSX.Element | null {
       {session.error && (
         <div className="absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-lg bg-red-500/20 px-4 py-2 text-sm text-red-300">
           {session.error}
+        </div>
+      )}
+
+      {interactive && questionSecondsLeft !== null && (
+        <div
+          className={`absolute left-6 top-6 z-20 flex h-20 w-20 items-center justify-center rounded-full border-4 text-3xl font-bold tabular-nums ${
+            questionSecondsLeft <= 5 ? 'border-red-500 text-red-400' : 'border-slide-accent text-slide-fg'
+          }`}
+          role="timer"
+          aria-label={`${questionSecondsLeft} seconds left to answer`}
+        >
+          {questionSecondsLeft}
+        </div>
+      )}
+
+      {showLeaderboard && (
+        <div className="absolute inset-0 z-20 pb-20" style={stageStyle}>
+          <LeaderboardView data={session.leaderboard ?? { top: [], playerCount: 0 }} />
         </div>
       )}
 
@@ -106,7 +129,12 @@ export function PresentMode(): JSX.Element | null {
 
       <div className="flex flex-1 flex-col items-center justify-center overflow-hidden px-10 pb-20 pt-10">
         <div className="flex w-full flex-1 items-center justify-center">
-          <SlideStatic slide={slide} visibleBullets={nav.visibleBullets} timerRemaining={nav.timerRemaining} />
+          <SlideStatic
+            slide={slide}
+            visibleBullets={nav.visibleBullets}
+            timerRemaining={nav.timerRemaining}
+            leaderboard={session.leaderboard}
+          />
         </div>
         {showResults && session.results && (
           <div className="flex w-full flex-col items-center justify-center pb-4 pt-6" aria-live="polite">
@@ -143,6 +171,8 @@ export function PresentMode(): JSX.Element | null {
         onToggleReveal={() => (session.state?.resultsRevealed ? session.hideResults() : session.revealResults())}
         onReset={() => session.resetResponses()}
         onToggleJoinPanel={() => setShowJoinPanel((v) => !v)}
+        showLeaderboard={session.state?.competition ? showLeaderboard : undefined}
+        onToggleLeaderboard={() => setShowLeaderboard((v) => !v)}
         onEnd={() => setConfirmEnd(true)}
         onExit={exitPresent}
       />

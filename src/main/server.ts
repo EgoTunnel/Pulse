@@ -7,6 +7,7 @@ import { app } from 'electron'
 import type {
   ClientToServerEvents,
   ConnectivitySignal,
+  FeedbackMessage,
   Presentation,
   ServerToClientEvents,
   SessionStateMessage
@@ -15,7 +16,7 @@ import { normalizeRoomCode } from '@shared/id'
 import { LOCAL_SERVER_PORT } from '@shared/config'
 import { getLocalNetworkAddress } from './network'
 import { SessionManager } from './sessionManager'
-import { isBoolean, isPlainObject, validId, validRoomCode } from './validate'
+import { isBoolean, isPlainObject, validId, validParticipantId, validRoomCode } from './validate'
 
 /** A socket that repeatedly guesses room codes gets disconnected — slows down brute-forcing the 6-digit code without needing a full rate-limiting stack. */
 const MAX_FAILED_JOIN_ATTEMPTS = 5
@@ -44,6 +45,7 @@ export class LocalServer {
   private session: SessionManager | null = null
   private port: number | null = null
   private connectivity: ConnectivitySignal = { anyDeviceReached: false, firstReachedAt: null }
+  private closeTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor() {
     this.app = express()
@@ -119,6 +121,7 @@ export class LocalServer {
   private configureSockets(): void {
     this.io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
       let role: 'student' | 'presenter' | null = null
+      let myParticipantId: string | null = null
       let failedJoinAttempts = 0
 
       /**
@@ -155,11 +158,38 @@ export class LocalServer {
             if (failedJoinAttempts >= MAX_FAILED_JOIN_ATTEMPTS) socket.disconnect(true)
             return
           }
+          const participantId = isPlainObject(payload) ? validParticipantId(payload.participantId) : null
+          if (!participantId) {
+            ack({ ok: false, error: 'Something went wrong joining. Please reload the page and try again.' })
+            return
+          }
           role = 'student'
+          myParticipantId = participantId
           socket.join(roomKey(this.session.roomCode))
-          this.session.addParticipant(socket.id)
+          this.session.addParticipant(socket.id, participantId)
           ack({ ok: true, state: this.session.getState() })
           this.broadcastState()
+          if (this.session.competition) {
+            this.sendStanding(participantId)
+            this.broadcastLeaderboard()
+          }
+        })
+      )
+
+      socket.on(
+        'student:setNickname',
+        safe((payload: unknown, ack) => {
+          if (typeof ack !== 'function') return
+          if (!this.session || role !== 'student' || !myParticipantId) {
+            ack({ ok: false, error: 'You are not connected to a session.' })
+            return
+          }
+          const result = this.session.setNickname(myParticipantId, isPlainObject(payload) ? payload.nickname : null)
+          ack(result)
+          if (result.ok) {
+            this.sendStanding(myParticipantId)
+            this.broadcastLeaderboard()
+          }
         })
       )
 
@@ -174,8 +204,10 @@ export class LocalServer {
           }
           role = 'presenter'
           socket.join(roomKey(this.session.roomCode))
+          socket.join(presenterKey(this.session.roomCode))
           ack({ ok: true, state: this.session.getState() })
           socket.emit('session:connectivity', this.connectivity)
+          if (this.session.competition) socket.emit('session:leaderboard', this.session.getLeaderboard())
           this.broadcastResults()
         })
       )
@@ -184,7 +216,7 @@ export class LocalServer {
         'student:respond',
         safe((payload: unknown, ack) => {
           if (typeof ack !== 'function') return
-          if (!this.session || role !== 'student') {
+          if (!this.session || role !== 'student' || !myParticipantId) {
             ack({ ok: false, error: 'You are not connected to a session.' })
             return
           }
@@ -193,7 +225,7 @@ export class LocalServer {
             ack({ ok: false, error: 'That response is not valid for this question.' })
             return
           }
-          const result = this.session.recordResponse(socket.id, slideId, isPlainObject(payload) ? payload.value : null)
+          const result = this.session.recordResponse(myParticipantId, slideId, isPlainObject(payload) ? payload.value : null)
           ack(result)
           if (result.ok) {
             this.broadcastState()
@@ -208,20 +240,52 @@ export class LocalServer {
           if (!this.session || role !== 'presenter') return
           const slideId = isPlainObject(payload) ? validId(payload.slideId) : null
           if (!slideId) return
-          if (this.session.setSlide(slideId)) {
-            this.broadcastState()
-            this.broadcastResults()
-          }
+          const { changed, feedback } = this.session.setSlide(slideId)
+          if (!changed) return
+          this.deliverFeedback(feedback)
+          this.broadcastState()
+          this.broadcastResults()
+          this.armCloseTimer()
         })
       )
 
-      socket.on('presenter:openResponses', safe(() => this.withPresenterSession(role, (s) => s.openResponses())))
-      socket.on('presenter:closeResponses', safe(() => this.withPresenterSession(role, (s) => s.closeResponses())))
-      socket.on('presenter:revealResults', safe(() => this.withPresenterSession(role, (s) => s.revealResults())))
+      socket.on(
+        'presenter:openResponses',
+        safe(() => {
+          this.withPresenterSession(role, (s) => s.openResponses())
+          this.armCloseTimer()
+        })
+      )
+      socket.on(
+        'presenter:closeResponses',
+        safe(() => {
+          this.withPresenterSession(role, (s) => s.closeResponses())
+          this.clearCloseTimer()
+        })
+      )
+      socket.on(
+        'presenter:revealResults',
+        safe(() => {
+          if (!this.session || role !== 'presenter') return
+          const feedback = this.session.revealResults()
+          this.deliverFeedback(feedback)
+          this.broadcastState()
+          this.broadcastResults()
+          // Re-arming clears the auto-close timer if the reveal just closed a scored question.
+          this.armCloseTimer()
+        })
+      )
       socket.on('presenter:hideResults', safe(() => this.withPresenterSession(role, (s) => s.hideResults())))
       socket.on(
         'presenter:resetResponses',
-        safe(() => this.withPresenterSession(role, (s) => s.resetResponses(), true))
+        safe(() => {
+          this.withPresenterSession(role, (s) => s.resetResponses(), true)
+          if (this.session?.competition) {
+            this.broadcastLeaderboard()
+            this.sendAllStandings()
+          }
+          this.armCloseTimer()
+        })
       )
       socket.on(
         'presenter:dismissQuestion',
@@ -290,17 +354,75 @@ export class LocalServer {
     this.io.to(roomKey(this.session.roomCode)).emit('session:state', state)
   }
 
+  /**
+   * Results go to presenters only. Students' screens never render them, and
+   * free-text entries carry the participant id they were stored under (for
+   * the presenter's remove button) — broadcasting that to the whole room
+   * would let one student act as another.
+   */
   private broadcastResults(): void {
     if (!this.session) return
     const snapshot = this.session.getResultsSnapshot()
-    if (snapshot) this.io.to(roomKey(this.session.roomCode)).emit('session:results', snapshot)
+    if (snapshot) this.io.to(presenterKey(this.session.roomCode)).emit('session:results', snapshot)
+  }
+
+  private broadcastLeaderboard(): void {
+    if (!this.session?.competition) return
+    this.io.to(presenterKey(this.session.roomCode)).emit('session:leaderboard', this.session.getLeaderboard())
+  }
+
+  private sendStanding(participantId: string): void {
+    if (!this.session) return
+    const standing = this.session.getStanding(participantId)
+    if (!standing) return
+    for (const socketId of this.session.socketsFor(participantId)) this.io.to(socketId).emit('student:standing', standing)
+  }
+
+  private sendAllStandings(): void {
+    if (!this.session) return
+    const seen = new Set<string>()
+    for (const socketId of this.io.sockets.adapter.rooms.get(roomKey(this.session.roomCode)) ?? []) {
+      const participantId = this.session.participantFor(socketId)
+      if (participantId && !seen.has(participantId)) {
+        seen.add(participantId)
+        this.sendStanding(participantId)
+      }
+    }
+  }
+
+  /** Each answerer privately learns whether they were right; then everyone's rank may have shifted. */
+  private deliverFeedback(feedback: Map<string, FeedbackMessage>): void {
+    if (!this.session || feedback.size === 0) return
+    for (const [participantId, message] of feedback) {
+      for (const socketId of this.session.socketsFor(participantId)) this.io.to(socketId).emit('student:feedback', message)
+    }
+    this.sendAllStandings()
+    this.broadcastLeaderboard()
+  }
+
+  private clearCloseTimer(): void {
+    if (this.closeTimer) clearTimeout(this.closeTimer)
+    this.closeTimer = null
+  }
+
+  /** (Re)starts the auto-close for a timed question, if the current slide has a limit. */
+  private armCloseTimer(): void {
+    this.clearCloseTimer()
+    const ms = this.session?.msUntilClose()
+    if (ms === null || ms === undefined) return
+    this.closeTimer = setTimeout(() => {
+      this.closeTimer = null
+      if (!this.session) return
+      this.session.closeResponses()
+      this.broadcastState()
+    }, ms + 50)
   }
 
   /** Called the instant any device's browser reaches a join route — proof the network path works, regardless of whether they go on to actually join. */
   private markDeviceReached(): void {
     if (this.connectivity.anyDeviceReached) return
     this.connectivity = { anyDeviceReached: true, firstReachedAt: new Date().toISOString() }
-    if (this.session) this.io.to(roomKey(this.session.roomCode)).emit('session:connectivity', this.connectivity)
+    if (this.session) this.io.to(presenterKey(this.session.roomCode)).emit('session:connectivity', this.connectivity)
   }
 
   async start(presentation: Presentation, preferredPort = LOCAL_SERVER_PORT): Promise<JoinInfo> {
@@ -343,6 +465,7 @@ export class LocalServer {
   }
 
   stop(): void {
+    this.clearCloseTimer()
     this.session?.end()
     this.session = null
   }
@@ -355,4 +478,9 @@ export class LocalServer {
 
 function roomKey(roomCode: string): string {
   return `room:${normalizeRoomCode(roomCode)}`
+}
+
+/** Presenter-only channel within a session — results, leaderboard, connectivity. */
+function presenterKey(roomCode: string): string {
+  return `presenters:${normalizeRoomCode(roomCode)}`
 }

@@ -1,10 +1,14 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import type { ResponseValue, Slide } from '@shared/types'
 import { LIKERT_LEVELS } from '@shared/types'
 
 interface Props {
   slide: Slide
   responsesOpen: boolean
+  /** Scored questions lock after the first answer (no changing it once you've seen the room's reaction). */
+  scored?: boolean
+  /** This student's feedback for a scored question has arrived — drop the 'wait for the reveal' message. */
+  revealed?: boolean
   onSubmit: (value: ResponseValue) => Promise<{ ok: true } | { ok: false; error: string }>
 }
 
@@ -13,14 +17,14 @@ const bigButton =
 const idleButton = 'border-slate-200 bg-white text-slate-800'
 const selectedButton = 'border-pulse-500 bg-pulse-500 text-white'
 
-function Shell({ children, submitted }: { children: React.ReactNode; submitted: boolean }): JSX.Element {
+function Shell({ children, submitted }: { children: React.ReactNode; submitted: string | false }): JSX.Element {
   return (
     <div className="relative" role="group" aria-labelledby="question-heading">
       {children}
       <div role="status" aria-live="polite">
         {submitted && (
           <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-3 text-sm font-medium text-emerald-700">
-            ✓ Response received
+            {submitted}
           </div>
         )}
       </div>
@@ -37,7 +41,7 @@ function ErrorMessage({ error }: { error: string | null }): JSX.Element | null {
   )
 }
 
-export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Element {
+export function ResponseForm({ slide, responsesOpen, scored = false, revealed = false, onSubmit }: Props): JSX.Element {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,14 +52,15 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     else setError(result.error)
   }
 
-  const disabled = !responsesOpen
+  const disabled = !responsesOpen || (scored && submitted)
+  const confirmation: string | false = submitted && !(scored && revealed) && (scored ? '🔒 Answer locked in — wait for the reveal' : '✓ Response received')
 
   switch (slide.type) {
     case 'multipleChoice':
     case 'poll': {
       const [selected, setSelected] = useState<string | null>(null)
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="space-y-3">
             {slide.options.map((opt) => (
               <button
@@ -79,7 +84,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     case 'multipleSelect': {
       const [selected, setSelected] = useState<string[]>([])
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="space-y-3">
             {slide.options.map((opt) => {
               const isSelected = selected.includes(opt.id)
@@ -110,7 +115,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     case 'trueFalse': {
       const [selected, setSelected] = useState<boolean | null>(null)
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="grid grid-cols-2 gap-3">
             {[true, false].map((v) => (
               <button
@@ -135,7 +140,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       const [value, setValue] = useState<number | null>(null)
       const options = Array.from({ length: slide.max - slide.min + 1 }, (_, i) => slide.min + i)
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="mb-2 flex justify-between text-xs text-slate-500" aria-hidden="true">
             <span>{slide.minLabel}</span>
             <span>{slide.maxLabel}</span>
@@ -164,7 +169,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     case 'likert': {
       const [value, setValue] = useState<number | null>(null)
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="space-y-3">
             {LIKERT_LEVELS.map((label, i) => (
               <button
@@ -188,7 +193,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     case 'wordCloud': {
       const [words, setWords] = useState<string[]>(Array(slide.maxWordsPerStudent).fill(''))
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="space-y-3">
             {words.map((w, i) => (
               <div key={i}>
@@ -226,7 +231,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
       const [text, setText] = useState('')
       const long = slide.type === 'openResponse'
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <label htmlFor="answer-text" className="sr-only">
             Your answer
           </label>
@@ -261,7 +266,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
         setOrder(next)
       }
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <ol className="space-y-2">
             {order.map((id, i) => {
               const opt = slide.options.find((o) => o.id === id)!
@@ -305,7 +310,7 @@ export function ResponseForm({ slide, responsesOpen, onSubmit }: Props): JSX.Ele
     case 'numeric': {
       const [value, setValue] = useState('')
       return (
-        <Shell submitted={submitted}>
+        <Shell submitted={confirmation}>
           <div className="flex items-center gap-2">
             <label htmlFor="numeric-answer" className="sr-only">
               Your answer{slide.unit ? ` (${slide.unit})` : ''}

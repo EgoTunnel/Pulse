@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react'
 import type { ChoiceOption, RevealPolicy, Slide } from '@shared/types'
-import { isInteractiveSlide } from '@shared/types'
+import { canBeScored, isInteractiveSlide, isScoredSlide } from '@shared/types'
 import type { SlideAlign, SlideStyle, SlideTextSize } from '@shared/theme'
 import { COLOR_SWATCHES } from '@shared/theme'
 import { makeId } from '@shared/id'
@@ -167,6 +167,54 @@ function SlideAppearance({ slide, patch }: { slide: Slide; patch: (p: Partial<Sl
   )
 }
 
+const TIME_LIMITS = [0, 10, 15, 20, 30, 45, 60, 90, 120]
+
+function QuestionOptions({ slide, patch }: { slide: Extract<Slide, { timeLimitSeconds?: number }>; patch: (p: Partial<Slide>) => void }): JSX.Element {
+  const scorable = canBeScored(slide)
+  const missingAnswer = scorable && slide.scored && !isScoredSlide(slide)
+  return (
+    <div className="space-y-3 rounded-lg border border-slate-800 p-3">
+      <Field label="Time limit">
+        <select
+          value={slide.timeLimitSeconds ?? 0}
+          onChange={(e) => patch({ timeLimitSeconds: Number(e.target.value) || undefined } as Partial<Slide>)}
+          className={inputClass}
+        >
+          {TIME_LIMITS.map((s) => (
+            <option key={s} value={s}>
+              {s === 0 ? 'No limit' : s < 60 ? `${s} seconds` : `${s / 60} minute${s === 60 ? '' : 's'}`}
+            </option>
+          ))}
+        </select>
+      </Field>
+      {scorable && (
+        <>
+          <label className="flex items-start gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={!!slide.scored}
+              onChange={(e) => patch({ scored: e.target.checked } as Partial<Slide>)}
+              className="mt-0.5 h-4 w-4 accent-pulse-500"
+            />
+            <span>
+              Scored question
+              <span className="block text-xs text-slate-500">
+                Counts toward the leaderboard. Answers lock on first tap, results stay hidden until you reveal them, and
+                with a time limit, faster correct answers earn more points (500–1000).
+              </span>
+            </span>
+          </label>
+          {missingAnswer && (
+            <p role="alert" className="rounded-md bg-amber-500/10 px-2 py-1.5 text-xs text-amber-300">
+              Pick a correct answer above — without one this question can't award points.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 export function SlideInspector({ slide }: Props): JSX.Element {
   const updateSlide = useEditorStore((s) => s.updateSlide)
   const patch = (p: Partial<Slide>): void => updateSlide(slide.id, p)
@@ -174,6 +222,7 @@ export function SlideInspector({ slide }: Props): JSX.Element {
   return (
     <div className="space-y-4">
       {renderFields(slide, patch)}
+      {isInteractiveSlide(slide) && <QuestionOptions slide={slide} patch={patch} />}
       <SlideAppearance slide={slide} patch={patch} />
       <Field label="Speaker notes">
         <textarea
@@ -401,6 +450,18 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
         </>
       )
     }
+    case 'leaderboard':
+      return (
+        <>
+          <Field label="Heading">
+            <input value={slide.heading} onChange={(e) => patch({ heading: e.target.value })} className={inputClass} />
+          </Field>
+          <p className="text-xs text-slate-500">
+            Shows live rankings from scored questions when presenting. Mark a multiple choice, multiple select, or
+            true/false question as scored (with a correct answer) to start a competition.
+          </p>
+        </>
+      )
     case 'multipleChoice':
       return (
         <>
@@ -436,6 +497,29 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
           <Field label="Options">
             <OptionsEditor options={slide.options} onChange={(options) => patch({ options })} />
           </Field>
+          <fieldset>
+            <legend className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">Correct answers (optional)</legend>
+            <div className="space-y-1">
+              {slide.options.map((o) => {
+                const checked = slide.correctOptionIds?.includes(o.id) ?? false
+                return (
+                  <label key={o.id} className="flex items-center gap-2 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const current = (slide.correctOptionIds ?? []).filter((id) => slide.options.some((opt) => opt.id === id))
+                        const next = e.target.checked ? [...current, o.id] : current.filter((id) => id !== o.id)
+                        patch({ correctOptionIds: next.length > 0 ? next : undefined })
+                      }}
+                      className="h-4 w-4 accent-pulse-500"
+                    />
+                    {o.label || 'Untitled option'}
+                  </label>
+                )
+              })}
+            </div>
+          </fieldset>
           <RevealPolicyToggle value={slide.revealPolicy} onChange={(revealPolicy) => patch({ revealPolicy })} />
         </>
       )
