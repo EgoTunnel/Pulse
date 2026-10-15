@@ -12,7 +12,7 @@ interface Props {
   onBanWord?: (word: string) => void
 }
 
-const BAR_COLORS = ['bg-pulse-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500', 'bg-cyan-500']
+const BAR_COLORS = ['bg-slide-accent', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500', 'bg-cyan-500']
 
 export function ResultsView({
   slide,
@@ -26,12 +26,12 @@ export function ResultsView({
 }: Props): JSX.Element {
   if (!revealed) {
     return (
-      <div className="flex flex-col items-center gap-2 text-slate-300">
-        <div className="text-4xl font-semibold text-white">{responseCount}</div>
-        <div className="text-sm uppercase tracking-wide text-slate-400">
+      <div className="flex flex-col items-center gap-2 text-slide-muted">
+        <div className="text-4xl font-semibold text-slide-fg">{responseCount}</div>
+        <div className="text-sm uppercase tracking-wide text-slide-muted">
           {responseCount === 1 ? 'response received' : 'responses received'}
         </div>
-        <div className="mt-2 text-sm text-slate-500">Results are hidden until you reveal them.</div>
+        <div className="mt-2 text-sm text-slide-muted">Results are hidden until you reveal them.</div>
       </div>
     )
   }
@@ -49,7 +49,7 @@ export function ResultsView({
       return (
         <div className="w-full max-w-3xl">
           <LabeledBars counts={counts} total={responseCount} />
-          <p className="mt-4 text-center text-sm text-slate-400">Average: {data.average.toFixed(2)}</p>
+          <p className="mt-4 text-center text-sm text-slide-muted">Average: {data.average.toFixed(2)}</p>
         </div>
       )
     }
@@ -63,15 +63,15 @@ export function ResultsView({
     case 'text':
       return (
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
-          {data.entries.length === 0 && <p className="text-slate-400">No responses yet.</p>}
+          {data.entries.length === 0 && <p className="text-slide-muted">No responses yet.</p>}
           {data.entries.map((entry) => (
-            <div key={entry.id} className="flex items-start gap-3 rounded-xl bg-white/10 p-4 text-left text-white">
+            <div key={entry.id} className="flex items-start gap-3 rounded-xl bg-slide-fg/10 p-4 text-left text-slide-fg">
               <p className="flex-1">{entry.text}</p>
               {onRemoveResponse && (
                 <button
                   onClick={() => onRemoveResponse(entry.id)}
                   aria-label="Remove this response"
-                  className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200 hover:bg-red-500/30 hover:text-red-200"
+                  className="shrink-0 rounded-md bg-slide-fg/10 px-2 py-1 text-xs text-slide-fg hover:bg-red-500/30 hover:text-red-200"
                 >
                   ✕
                 </button>
@@ -88,10 +88,10 @@ export function ResultsView({
           {entries.map(([optionId, avg], i) => {
             const label = rankSlide?.options.find((o) => o.id === optionId)?.label ?? optionId
             return (
-              <div key={optionId} className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-white">
-                <span className="text-lg font-semibold text-pulse-300">#{i + 1}</span>
+              <div key={optionId} className="flex items-center gap-3 rounded-lg bg-slide-fg/10 px-4 py-3 text-slide-fg">
+                <span className="text-lg font-semibold text-slide-accent">#{i + 1}</span>
                 <span className="flex-1">{label}</span>
-                <span className="text-sm text-slate-300">avg rank {avg.toFixed(1)}</span>
+                <span className="text-sm text-slide-muted">avg rank {avg.toFixed(1)}</span>
               </div>
             )
           })}
@@ -110,11 +110,11 @@ export function ResultsView({
     case 'questions':
       return (
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
-          {data.entries.length === 0 && <p className="text-slate-400">No questions yet.</p>}
+          {data.entries.length === 0 && <p className="text-slide-muted">No questions yet.</p>}
           {[...data.entries].reverse().map((q) => (
             <div
               key={q.id}
-              className={`flex items-start gap-3 rounded-xl p-4 text-left ${q.addressed ? 'bg-white/5 text-slate-400' : 'bg-white/10 text-white'}`}
+              className={`flex items-start gap-3 rounded-xl p-4 text-left ${q.addressed ? 'bg-slide-fg/5 text-slide-muted' : 'bg-slide-fg/10 text-slide-fg'}`}
             >
               <p className={`flex-1 ${q.addressed ? 'line-through decoration-slate-500' : ''}`}>{q.text}</p>
               {(onMarkQuestionAddressed || onDismissQuestion) && (
@@ -124,7 +124,7 @@ export function ResultsView({
                       onClick={() => onMarkQuestionAddressed(q.id, !q.addressed)}
                       aria-pressed={q.addressed}
                       className={`rounded-md px-2 py-1 text-xs font-medium ${
-                        q.addressed ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/10 text-slate-200 hover:bg-white/20'
+                        q.addressed ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slide-fg/10 text-slide-fg hover:bg-slide-fg/20'
                       }`}
                     >
                       {q.addressed ? '✓ Addressed' : 'Mark addressed'}
@@ -134,7 +134,7 @@ export function ResultsView({
                     <button
                       onClick={() => onDismissQuestion(q.id)}
                       aria-label="Dismiss question"
-                      className="rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200 hover:bg-red-500/30 hover:text-red-200"
+                      className="rounded-md bg-slide-fg/10 px-2 py-1 text-xs text-slide-fg hover:bg-red-500/30 hover:text-red-200"
                     >
                       ✕
                     </button>
@@ -177,16 +177,16 @@ function LabeledBars({
         const isCorrect = highlight?.has(label)
         return (
           <div key={label}>
-            <div className="mb-1 flex items-center justify-between text-sm text-slate-200">
+            <div className="mb-1 flex items-center justify-between text-sm text-slide-fg">
               <span className="flex items-center gap-2">
                 {label}
-                {isCorrect && <span className="text-emerald-400">✓ correct</span>}
+                {isCorrect && <span className="text-emerald-500">✓ correct</span>}
               </span>
-              <span className="text-slate-400">
+              <span className="text-slide-muted">
                 {count} · {pct}%
               </span>
             </div>
-            <div className="h-4 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-4 w-full overflow-hidden rounded-full bg-slide-fg/10">
               <div
                 className={`h-full rounded-full ${isCorrect ? 'bg-emerald-500' : BAR_COLORS[i % BAR_COLORS.length]} transition-all duration-500`}
                 style={{ width: `${(count / max) * 100}%` }}
@@ -200,7 +200,7 @@ function LabeledBars({
 }
 
 function WordCloud({ words, onBanWord }: { words: { text: string; count: number }[]; onBanWord?: (word: string) => void }): JSX.Element {
-  if (words.length === 0) return <p className="text-slate-400">No words yet.</p>
+  if (words.length === 0) return <p className="text-slide-muted">No words yet.</p>
   const max = Math.max(...words.map((w) => w.count))
   return (
     <>
@@ -223,7 +223,7 @@ function WordCloud({ words, onBanWord }: { words: { text: string; count: number 
             <span key={w.text} className="group relative inline-flex items-center">
               <span
                 aria-hidden="true"
-                className="font-semibold text-white"
+                className="font-semibold text-slide-fg"
                 style={{ fontSize: `${scale}rem`, opacity: 0.55 + (w.count / max) * 0.45 }}
               >
                 {w.text}
@@ -248,8 +248,8 @@ function WordCloud({ words, onBanWord }: { words: { text: string; count: number 
 function Stat({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div>
-      <div className="text-4xl font-semibold text-white">{value}</div>
-      <div className="text-sm uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-4xl font-semibold text-slide-fg">{value}</div>
+      <div className="text-sm uppercase tracking-wide text-slide-muted">{label}</div>
     </div>
   )
 }

@@ -1,11 +1,25 @@
 // Core Pulse data model, shared between the main process (local server + file
 // storage), the instructor renderer, and the student renderer.
 
+import type { PresentationTheme, SlideStyle } from './theme'
+
 // ---------------------------------------------------------------------------
 // Presentations & slides
 // ---------------------------------------------------------------------------
 
-export type ContentSlideType = 'title' | 'text' | 'image' | 'imageText' | 'section' | 'blank'
+export type ContentSlideType =
+  | 'title'
+  | 'text'
+  | 'image'
+  | 'imageText'
+  | 'section'
+  | 'blank'
+  | 'bullets'
+  | 'quote'
+  | 'twoColumn'
+  | 'statement'
+  | 'code'
+  | 'timer'
 
 export type InteractiveSlideType =
   | 'multipleChoice'
@@ -29,7 +43,13 @@ export const CONTENT_SLIDE_TYPES: ContentSlideType[] = [
   'image',
   'imageText',
   'section',
-  'blank'
+  'blank',
+  'bullets',
+  'quote',
+  'twoColumn',
+  'statement',
+  'code',
+  'timer'
 ]
 
 export const INTERACTIVE_SLIDE_TYPES: InteractiveSlideType[] = [
@@ -56,6 +76,8 @@ interface SlideBase {
   type: SlideType
   /** Instructor-only speaker notes. Never sent to students. */
   notes?: string
+  /** Per-slide appearance overrides on top of the presentation theme. */
+  style?: SlideStyle
 }
 
 // --- Content slides ---------------------------------------------------------
@@ -99,6 +121,53 @@ export interface BlankSlide extends SlideBase {
   type: 'blank'
   heading?: string
   body?: string
+}
+
+export interface BulletsSlide extends SlideBase {
+  type: 'bullets'
+  heading?: string
+  items: string[]
+  /** Present mode reveals one bullet per "next" press instead of all at once. */
+  revealOneByOne: boolean
+}
+
+export interface QuoteSlide extends SlideBase {
+  type: 'quote'
+  quote: string
+  attribution?: string
+}
+
+export interface TwoColumnSlide extends SlideBase {
+  type: 'twoColumn'
+  heading?: string
+  leftHeading?: string
+  leftBody: string
+  rightHeading?: string
+  rightBody: string
+}
+
+/** A single big number or phrase — "68%", "1 in 4" — with a supporting label. */
+export interface StatementSlide extends SlideBase {
+  type: 'statement'
+  value: string
+  label?: string
+  description?: string
+}
+
+export interface CodeSlide extends SlideBase {
+  type: 'code'
+  heading?: string
+  code: string
+  /** Display label only — no syntax highlighting is attempted. */
+  language?: string
+}
+
+/** A non-polling activity slide — "discuss with your neighbour" — with a visible countdown. */
+export interface TimerSlide extends SlideBase {
+  type: 'timer'
+  heading: string
+  body?: string
+  durationSeconds: number
 }
 
 // --- Interactive slides ------------------------------------------------------
@@ -210,6 +279,12 @@ export type Slide =
   | ImageTextSlide
   | SectionSlide
   | BlankSlide
+  | BulletsSlide
+  | QuoteSlide
+  | TwoColumnSlide
+  | StatementSlide
+  | CodeSlide
+  | TimerSlide
   | MultipleChoiceSlide
   | MultipleSelectSlide
   | TrueFalseSlide
@@ -229,6 +304,8 @@ export interface Presentation {
   createdAt: string
   updatedAt: string
   slides: Slide[]
+  /** Optional so presentations saved before themes existed still open (they get the default theme). */
+  theme?: PresentationTheme
 }
 
 /** Entry in the local library of presentations known to this installation of Pulse. */

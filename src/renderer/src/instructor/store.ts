@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { LibraryEntry, Presentation, Slide, SlideType } from '@shared/types'
+import type { PresentationTheme } from '@shared/theme'
 import { createSlide } from '@shared/slideFactory'
 
 export type EditorView = 'library' | 'editor' | 'present'
@@ -28,6 +29,7 @@ interface EditorState {
   duplicateSlide: (id: string) => void
   moveSlide: (id: string, toIndex: number) => void
   setTitle: (title: string) => void
+  setTheme: (theme: PresentationTheme) => void
 
   save: () => Promise<void>
   saveAs: () => Promise<void>
@@ -156,6 +158,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { presentation } = get()
     if (!presentation) return
     set({ presentation: { ...presentation, title }, dirty: true })
+  },
+
+  setTheme: (theme: PresentationTheme) => {
+    const { presentation } = get()
+    if (!presentation) return
+    set({ presentation: { ...presentation, theme }, dirty: true })
   },
 
   save: async () => {

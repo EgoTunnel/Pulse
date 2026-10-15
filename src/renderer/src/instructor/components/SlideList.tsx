@@ -46,7 +46,7 @@ export function SlideList(): JSX.Element {
                 )}
               </div>
               <span className="sr-only">{label}</span>
-              <SlideThumbnail slide={slide} />
+              <SlideThumbnail slide={slide} theme={presentation.theme} />
             </button>
             <div className="absolute right-1 top-6 hidden flex-col gap-1 group-hover:flex group-focus-within:flex">
               <button

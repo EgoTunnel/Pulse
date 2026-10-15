@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { isInteractiveSlide } from '@shared/types'
 import { SlideStatic } from '../../shared/SlideStatic'
 import { ResultsView } from '../../shared/ResultsView'
+import { resolveTheme, themeStyleVars } from '@shared/theme'
 import { useEditorStore } from '../store'
 import { usePresenterSession } from '../usePresenterSession'
+import { usePresentationNav } from '../usePresentationNav'
 import { JoinPanel } from './JoinPanel'
 import { ControlBar } from './ControlBar'
 import { ConnectionHelp } from './ConnectionHelp'
@@ -14,7 +16,9 @@ const NO_CONNECTION_HINT_DELAY_MS = 45_000
 export function PresentMode(): JSX.Element | null {
   const presentation = useEditorStore((s) => s.presentation)
   const exitPresent = useEditorStore((s) => s.exitPresent)
-  const [index, setIndex] = useState(0)
+  const slides = presentation?.slides ?? []
+  const nav = usePresentationNav(slides)
+  const index = nav.index
   const [showJoinPanel, setShowJoinPanel] = useState(true)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [showTroubleshooting, setShowTroubleshooting] = useState(false)
@@ -31,7 +35,6 @@ export function PresentMode(): JSX.Element | null {
     return () => clearTimeout(t)
   }, [session.joinInfo, session.connectivity.anyDeviceReached])
 
-  const slides = presentation?.slides ?? []
   const slide = slides[index]
 
   useEffect(() => {
@@ -56,20 +59,37 @@ export function PresentMode(): JSX.Element | null {
         return
       }
       if (confirmEnd || showTroubleshooting) return
-      if (e.key === 'ArrowRight' || e.key === ' ') setIndex((i) => Math.min(i + 1, slides.length - 1))
-      if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0))
+      // Buttons handle their own Space/Enter; don't double-fire navigation.
+      if (e.target instanceof HTMLButtonElement && (e.key === ' ' || e.key === 'Enter')) return
+      const onTimer = slide?.type === 'timer'
+      if (onTimer && e.key === ' ') {
+        e.preventDefault()
+        nav.toggleTimer()
+        return
+      }
+      if (onTimer && (e.key === 'r' || e.key === 'R')) {
+        nav.restartTimer()
+        return
+      }
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault()
+        nav.next()
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') nav.prev()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [slides.length, exitPresent, confirmEnd, showTroubleshooting])
+  }, [nav, slide, exitPresent, confirmEnd, showTroubleshooting])
 
   if (!presentation || !slide) return null
+
+  const stageStyle = themeStyleVars(resolveTheme(presentation.theme, slide.style)) as React.CSSProperties
 
   const interactive = isInteractiveSlide(slide)
   const showResults = interactive && session.results && session.results.slideId === slide.id && (session.state?.responseCount ?? 0) >= 0
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-gradient-to-b from-slate-950 to-ink-950">
+    <div className="relative flex h-full w-full flex-col transition-[background] duration-500" style={stageStyle}>
       {session.error && (
         <div className="absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-lg bg-red-500/20 px-4 py-2 text-sm text-red-300">
           {session.error}
@@ -86,7 +106,7 @@ export function PresentMode(): JSX.Element | null {
 
       <div className="flex flex-1 flex-col items-center justify-center overflow-hidden px-10 pb-20 pt-10">
         <div className="flex w-full flex-1 items-center justify-center">
-          <SlideStatic slide={slide} size="present" />
+          <SlideStatic slide={slide} visibleBullets={nav.visibleBullets} timerRemaining={nav.timerRemaining} />
         </div>
         {showResults && session.results && (
           <div className="flex w-full flex-col items-center justify-center pb-4 pt-6" aria-live="polite">
@@ -111,9 +131,14 @@ export function PresentMode(): JSX.Element | null {
         state={session.state}
         index={index}
         total={slides.length}
+        canPrev={nav.canPrev}
+        canNext={nav.canNext}
+        timerRunning={slide.type === 'timer' ? nav.timerRunning : undefined}
+        onToggleTimer={nav.toggleTimer}
+        onRestartTimer={nav.restartTimer}
         showJoinPanel={showJoinPanel}
-        onPrev={() => setIndex((i) => Math.max(i - 1, 0))}
-        onNext={() => setIndex((i) => Math.min(i + 1, slides.length - 1))}
+        onPrev={nav.prev}
+        onNext={nav.next}
         onToggleOpen={() => (session.state?.responsesOpen ? session.closeResponses() : session.openResponses())}
         onToggleReveal={() => (session.state?.resultsRevealed ? session.hideResults() : session.revealResults())}
         onReset={() => session.resetResponses()}

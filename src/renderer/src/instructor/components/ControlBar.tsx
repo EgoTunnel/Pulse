@@ -6,6 +6,12 @@ interface Props {
   state: SessionStateMessage | null
   index: number
   total: number
+  canPrev: boolean
+  canNext: boolean
+  /** Defined only on an activity-timer slide. */
+  timerRunning?: boolean
+  onToggleTimer: () => void
+  onRestartTimer: () => void
   showJoinPanel: boolean
   onPrev: () => void
   onNext: () => void
@@ -22,6 +28,11 @@ export function ControlBar({
   state,
   index,
   total,
+  canPrev,
+  canNext,
+  timerRunning,
+  onToggleTimer,
+  onRestartTimer,
   showJoinPanel,
   onPrev,
   onNext,
@@ -53,7 +64,7 @@ export function ControlBar({
       <div className="flex items-center gap-3">
         <button
           onClick={onPrev}
-          disabled={index === 0}
+          disabled={!canPrev}
           aria-label="Previous slide"
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 disabled:opacity-30"
         >
@@ -64,7 +75,7 @@ export function ControlBar({
         </span>
         <button
           onClick={onNext}
-          disabled={index === total - 1}
+          disabled={!canNext}
           aria-label="Next slide"
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 disabled:opacity-30"
         >
@@ -73,6 +84,20 @@ export function ControlBar({
       </div>
 
       <div className="flex items-center gap-2">
+        {timerRunning !== undefined && (
+          <>
+            <button
+              onClick={onToggleTimer}
+              aria-pressed={!timerRunning}
+              className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
+            >
+              {timerRunning ? 'Pause timer' : 'Resume timer'}
+            </button>
+            <button onClick={onRestartTimer} className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
+              Restart timer
+            </button>
+          </>
+        )}
         {interactive && (
           <>
             <span className="text-sm text-slate-400" aria-live="polite">

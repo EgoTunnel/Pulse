@@ -4,6 +4,8 @@ import path from 'node:path'
 import type { LibraryEntry, Presentation, Slide } from '@shared/types'
 import { CONTENT_SLIDE_TYPES, INTERACTIVE_SLIDE_TYPES } from '@shared/types'
 import { makeId } from '@shared/id'
+import type { FontId, PresentationTheme, SlideStyle, ThemeId } from '@shared/theme'
+import { FONTS, THEMES, isHexColor } from '@shared/theme'
 import { getPortableDataDir } from './portable'
 
 const FILE_EXTENSION = 'pulse.json'
@@ -33,6 +35,7 @@ function sanitizeSlide(raw: unknown): Slide | null {
   if (typeof s.id !== 'string' || typeof s.type !== 'string' || !KNOWN_SLIDE_TYPES.has(s.type)) return null
   const clone = { ...s }
   if ('imageDataUrl' in clone && !isDataImageUrl(clone.imageDataUrl)) delete clone.imageDataUrl
+  if ('style' in clone) clone.style = sanitizeStyle(clone.style)
   return clone as unknown as Slide
 }
 
@@ -48,7 +51,37 @@ function sanitizePresentation(raw: unknown): Presentation {
     title: p.title,
     createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString(),
     updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString(),
-    slides
+    slides,
+    theme: sanitizeTheme(p.theme)
+  }
+}
+
+/**
+ * Theme values end up in inline CSS, so only known IDs and plain hex colors
+ * get through — a background like url(https://…) in a shared file would
+ * otherwise make the renderer fetch it, the same leak sanitizeSlide guards
+ * against for images.
+ */
+function sanitizeTheme(raw: unknown): PresentationTheme | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined
+  const t = raw as Record<string, unknown>
+  if (!THEMES.some((theme) => theme.id === t.themeId)) return undefined
+  const fontIds = new Set(FONTS.map((f) => f.id))
+  return {
+    themeId: t.themeId as ThemeId,
+    headingFont: fontIds.has(t.headingFont as FontId) ? (t.headingFont as FontId) : undefined,
+    bodyFont: fontIds.has(t.bodyFont as FontId) ? (t.bodyFont as FontId) : undefined,
+    accent: isHexColor(t.accent) ? t.accent : undefined
+  }
+}
+
+function sanitizeStyle(raw: unknown): SlideStyle | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined
+  const s = raw as Record<string, unknown>
+  return {
+    background: isHexColor(s.background) ? s.background : undefined,
+    align: s.align === 'left' || s.align === 'center' ? s.align : undefined,
+    textSize: s.textSize === 'sm' || s.textSize === 'md' || s.textSize === 'lg' ? s.textSize : undefined
   }
 }
 

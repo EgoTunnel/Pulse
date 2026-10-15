@@ -3,6 +3,7 @@ import { SlideThumbnail } from '../../shared/SlideThumbnail'
 import { useEditorStore } from '../store'
 import { SlideList } from './SlideList'
 import { SlideInspector } from './SlideInspector'
+import { DesignPanel } from './DesignPanel'
 
 export function Editor(): JSX.Element | null {
   const presentation = useEditorStore((s) => s.presentation)
@@ -15,6 +16,11 @@ export function Editor(): JSX.Element | null {
   const exportPresentation = useEditorStore((s) => s.exportPresentation)
   const enterPresent = useEditorStore((s) => s.enterPresent)
   const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const [panel, setPanel] = useState<'slide' | 'design'>('slide')
+
+  useEffect(() => {
+    setPanel('slide')
+  }, [selectedSlideId])
 
   useEffect(() => {
     if (!dirty) return
@@ -88,17 +94,36 @@ export function Editor(): JSX.Element | null {
         <div className="flex flex-1 items-center justify-center overflow-auto bg-slate-950 p-8" aria-label="Slide preview" role="region">
           {selectedSlide && (
             <div className="w-full max-w-4xl">
-              <SlideThumbnail slide={selectedSlide} size="present" />
+              <SlideThumbnail slide={selectedSlide} theme={presentation.theme} />
             </div>
           )}
         </div>
 
-        <div className="w-80 shrink-0 overflow-y-auto border-l border-slate-800 p-4" aria-label="Slide settings" role="region">
-          {selectedSlide ? (
-            <SlideInspector slide={selectedSlide} />
-          ) : (
-            <p className="text-sm text-slate-500">Add a slide to get started.</p>
-          )}
+        <div className="flex w-80 shrink-0 flex-col border-l border-slate-800" aria-label="Settings" role="region">
+          <div role="tablist" aria-label="Settings" className="flex border-b border-slate-800">
+            {(['slide', 'design'] as const).map((tab) => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={panel === tab}
+                onClick={() => setPanel(tab)}
+                className={`flex-1 px-4 py-2.5 text-sm font-medium ${
+                  panel === tab ? 'border-b-2 border-pulse-400 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {tab === 'slide' ? 'Slide' : 'Design'}
+              </button>
+            ))}
+          </div>
+          <div role="tabpanel" className="flex-1 overflow-y-auto p-4">
+            {panel === 'design' ? (
+              <DesignPanel />
+            ) : selectedSlide ? (
+              <SlideInspector slide={selectedSlide} />
+            ) : (
+              <p className="text-sm text-slate-500">Add a slide to get started.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -20,11 +20,20 @@ export default {
         },
         ink: {
           950: '#0a0e1a'
+        },
+        // Theme-driven slide colors — values come from CSS variables set by
+        // themeStyleVars() (src/shared/theme.ts), so the same markup works on
+        // every theme, light or dark, with opacity modifiers (bg-slide-fg/10).
+        slide: {
+          fg: 'rgb(var(--slide-fg, 255 255 255) / <alpha-value>)',
+          muted: 'rgb(var(--slide-muted, 203 213 225) / <alpha-value>)',
+          accent: 'rgb(var(--slide-accent, 92 139 255) / <alpha-value>)'
         }
       },
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
-        display: ['"Cal Sans"', '"Inter"', 'system-ui', 'sans-serif']
+        sans: ['"Inter Variable"', '"Inter"', 'system-ui', 'sans-serif'],
+        heading: ['var(--slide-font-heading)'],
+        body: ['var(--slide-font-body)']
       },
       keyframes: {
         'pulse-ring': {

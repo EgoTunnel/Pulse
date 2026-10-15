@@ -13,6 +13,12 @@ export const CONTENT_SLIDE_META: SlideTypeMeta[] = [
   { type: 'image', label: 'Image', description: 'A full image with caption', glyph: '▧' },
   { type: 'imageText', label: 'Image + Text', description: 'Image beside text', glyph: '▥' },
   { type: 'section', label: 'Section', description: 'A section divider', glyph: '§' },
+  { type: 'bullets', label: 'Bullet List', description: 'Points, optionally revealed one at a time', glyph: '•' },
+  { type: 'twoColumn', label: 'Two Columns', description: 'Side-by-side comparison', glyph: '◫' },
+  { type: 'quote', label: 'Quote', description: 'A quotation with attribution', glyph: '❝' },
+  { type: 'statement', label: 'Big Number', description: 'One striking stat or phrase', glyph: '%' },
+  { type: 'code', label: 'Code', description: 'A monospaced code snippet', glyph: '</>' },
+  { type: 'timer', label: 'Activity Timer', description: 'A countdown for discussion or work', glyph: '⏱' },
   { type: 'blank', label: 'Blank', description: 'Start from scratch', glyph: '▢' }
 ]
 

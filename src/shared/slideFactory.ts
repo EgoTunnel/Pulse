@@ -21,6 +21,26 @@ export function createSlide(type: SlideType): Slide {
       return { id, type, title: 'New section' }
     case 'blank':
       return { id, type, heading: '', body: '' }
+    case 'bullets':
+      return { id, type, heading: 'Key points', items: ['First point', 'Second point', 'Third point'], revealOneByOne: false }
+    case 'quote':
+      return { id, type, quote: 'The important thing is not to stop questioning.', attribution: 'Albert Einstein' }
+    case 'twoColumn':
+      return {
+        id,
+        type,
+        heading: 'Compare',
+        leftHeading: 'Before',
+        leftBody: '',
+        rightHeading: 'After',
+        rightBody: ''
+      }
+    case 'statement':
+      return { id, type, value: '68%', label: 'of students', description: '' }
+    case 'code':
+      return { id, type, heading: 'Example', code: 'def greet(name):\n    return f"Hello, {name}!"', language: 'Python' }
+    case 'timer':
+      return { id, type, heading: 'Discuss with the people around you', body: '', durationSeconds: 180 }
     case 'multipleChoice':
       return {
         id,

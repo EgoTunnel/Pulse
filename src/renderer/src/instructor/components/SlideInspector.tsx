@@ -1,6 +1,8 @@
 import type { ChangeEvent } from 'react'
 import type { ChoiceOption, RevealPolicy, Slide } from '@shared/types'
 import { isInteractiveSlide } from '@shared/types'
+import type { SlideAlign, SlideStyle, SlideTextSize } from '@shared/theme'
+import { COLOR_SWATCHES } from '@shared/theme'
 import { makeId } from '@shared/id'
 import { useEditorStore } from '../store'
 
@@ -102,6 +104,69 @@ function RevealPolicyToggle({ value, onChange }: { value: RevealPolicy; onChange
   )
 }
 
+function SlideAppearance({ slide, patch }: { slide: Slide; patch: (p: Partial<Slide>) => void }): JSX.Element {
+  const style: SlideStyle = slide.style ?? {}
+  const setStyle = (p: Partial<SlideStyle>): void => patch({ style: { ...style, ...p } })
+  const pill = (active: boolean): string =>
+    `flex-1 rounded-lg border px-3 py-1.5 text-xs ${active ? 'border-pulse-400 bg-pulse-500/20 text-white' : 'border-slate-700 text-slate-400 hover:text-slate-200'}`
+
+  return (
+    <details className="rounded-lg border border-slate-800 p-3" open={!!slide.style}>
+      <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-slate-400">Slide appearance</summary>
+      <div className="mt-3 space-y-4">
+        <div>
+          <span className="mb-1 block text-xs text-slate-400">Background</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button onClick={() => setStyle({ background: undefined })} aria-pressed={!style.background} className={`rounded-md border px-2 py-1 text-xs ${!style.background ? 'border-pulse-400 text-white' : 'border-slate-700 text-slate-400'}`}>
+              Theme
+            </button>
+            {COLOR_SWATCHES.map((c) => (
+              <button
+                key={c}
+                onClick={() => setStyle({ background: c })}
+                aria-pressed={style.background === c}
+                aria-label={`Background ${c}`}
+                className={`h-6 w-6 rounded-md border-2 ${style.background === c ? 'border-pulse-400' : 'border-slate-700'}`}
+                style={{ background: c }}
+              />
+            ))}
+            <label className="flex items-center gap-1 text-xs text-slate-400">
+              <span className="sr-only">Custom background color</span>
+              <input
+                type="color"
+                value={style.background ?? '#1e293b'}
+                onChange={(e) => setStyle({ background: e.target.value })}
+                className="h-6 w-8 cursor-pointer rounded border border-slate-700 bg-transparent"
+              />
+              Custom
+            </label>
+          </div>
+        </div>
+        <div>
+          <span className="mb-1 block text-xs text-slate-400">Alignment</span>
+          <div className="flex gap-2">
+            {(['center', 'left'] as SlideAlign[]).map((a) => (
+              <button key={a} onClick={() => setStyle({ align: a })} aria-pressed={(style.align ?? 'center') === a} className={pill((style.align ?? 'center') === a)}>
+                {a === 'center' ? 'Centered' : 'Left-aligned'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <span className="mb-1 block text-xs text-slate-400">Text size</span>
+          <div className="flex gap-2">
+            {(['sm', 'md', 'lg'] as SlideTextSize[]).map((s) => (
+              <button key={s} onClick={() => setStyle({ textSize: s })} aria-pressed={(style.textSize ?? 'md') === s} className={pill((style.textSize ?? 'md') === s)}>
+                {s === 'sm' ? 'Smaller' : s === 'md' ? 'Normal' : 'Larger'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </details>
+  )
+}
+
 export function SlideInspector({ slide }: Props): JSX.Element {
   const updateSlide = useEditorStore((s) => s.updateSlide)
   const patch = (p: Partial<Slide>): void => updateSlide(slide.id, p)
@@ -109,6 +174,7 @@ export function SlideInspector({ slide }: Props): JSX.Element {
   return (
     <div className="space-y-4">
       {renderFields(slide, patch)}
+      <SlideAppearance slide={slide} patch={patch} />
       <Field label="Speaker notes">
         <textarea
           value={slide.notes ?? ''}
@@ -220,6 +286,121 @@ function renderFields(slide: Slide, patch: (p: Partial<Slide>) => void): JSX.Ele
           </Field>
         </>
       )
+    case 'bullets':
+      return (
+        <>
+          <Field label="Heading">
+            <input value={slide.heading ?? ''} onChange={(e) => patch({ heading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Bullets (one per line)">
+            <textarea
+              value={slide.items.join('\n')}
+              onChange={(e) => patch({ items: e.target.value.split('\n') })}
+              rows={6}
+              className={inputClass}
+            />
+          </Field>
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={slide.revealOneByOne}
+              onChange={(e) => patch({ revealOneByOne: e.target.checked })}
+              className="h-4 w-4 accent-pulse-500"
+            />
+            Reveal one bullet at a time when presenting
+          </label>
+        </>
+      )
+    case 'quote':
+      return (
+        <>
+          <Field label="Quote">
+            <textarea value={slide.quote} onChange={(e) => patch({ quote: e.target.value })} rows={4} className={inputClass} />
+          </Field>
+          <Field label="Attribution">
+            <input value={slide.attribution ?? ''} onChange={(e) => patch({ attribution: e.target.value })} className={inputClass} />
+          </Field>
+        </>
+      )
+    case 'twoColumn':
+      return (
+        <>
+          <Field label="Heading">
+            <input value={slide.heading ?? ''} onChange={(e) => patch({ heading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Left column heading">
+            <input value={slide.leftHeading ?? ''} onChange={(e) => patch({ leftHeading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Left column text">
+            <textarea value={slide.leftBody} onChange={(e) => patch({ leftBody: e.target.value })} rows={4} className={inputClass} />
+          </Field>
+          <Field label="Right column heading">
+            <input value={slide.rightHeading ?? ''} onChange={(e) => patch({ rightHeading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Right column text">
+            <textarea value={slide.rightBody} onChange={(e) => patch({ rightBody: e.target.value })} rows={4} className={inputClass} />
+          </Field>
+        </>
+      )
+    case 'statement':
+      return (
+        <>
+          <Field label="Big number or phrase">
+            <input value={slide.value} onChange={(e) => patch({ value: e.target.value })} className={inputClass} placeholder="e.g. 68%" />
+          </Field>
+          <Field label="Label">
+            <input value={slide.label ?? ''} onChange={(e) => patch({ label: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Description">
+            <textarea value={slide.description ?? ''} onChange={(e) => patch({ description: e.target.value })} rows={3} className={inputClass} />
+          </Field>
+        </>
+      )
+    case 'code':
+      return (
+        <>
+          <Field label="Heading">
+            <input value={slide.heading ?? ''} onChange={(e) => patch({ heading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Language label">
+            <input value={slide.language ?? ''} onChange={(e) => patch({ language: e.target.value })} className={inputClass} placeholder="e.g. Python" />
+          </Field>
+          <Field label="Code">
+            <textarea
+              value={slide.code}
+              onChange={(e) => patch({ code: e.target.value })}
+              rows={10}
+              spellCheck={false}
+              className={`${inputClass} font-mono`}
+            />
+          </Field>
+        </>
+      )
+    case 'timer': {
+      const minutes = Math.floor(slide.durationSeconds / 60)
+      const seconds = slide.durationSeconds % 60
+      const setDuration = (m: number, s: number): void =>
+        patch({ durationSeconds: Math.max(5, Math.min(60 * 60, Math.round(m) * 60 + Math.round(s))) })
+      return (
+        <>
+          <Field label="Activity">
+            <input value={slide.heading} onChange={(e) => patch({ heading: e.target.value })} className={inputClass} />
+          </Field>
+          <Field label="Instructions (optional)">
+            <textarea value={slide.body ?? ''} onChange={(e) => patch({ body: e.target.value })} rows={3} className={inputClass} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Minutes">
+              <input type="number" min={0} max={60} value={minutes} onChange={(e) => setDuration(Number(e.target.value), seconds)} className={inputClass} />
+            </Field>
+            <Field label="Seconds">
+              <input type="number" min={0} max={59} value={seconds} onChange={(e) => setDuration(minutes, Number(e.target.value))} className={inputClass} />
+            </Field>
+          </div>
+          <p className="text-xs text-slate-500">When presenting, the countdown starts as soon as you reach this slide. Space pauses it, R restarts it.</p>
+        </>
+      )
+    }
     case 'multipleChoice':
       return (
         <>
